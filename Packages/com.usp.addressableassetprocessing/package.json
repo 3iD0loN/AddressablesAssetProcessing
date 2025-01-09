@@ -3,7 +3,9 @@
   "displayName": "Addressables Asset Processing",
   "version": "0.0.1",
   "unity": "6000.0",
-  "description": "",
+  "dependencies": {
+    "com.usp.metaaddressables": "0.0.1"
+  },
   "category": "Framework",
   "type": "library"
 }

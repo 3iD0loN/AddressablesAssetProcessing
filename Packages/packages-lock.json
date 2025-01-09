@@ -245,7 +245,9 @@
       "version": "file:com.usp.addressableassetprocessing",
       "depth": 0,
       "source": "embedded",
-      "dependencies": {}
+      "dependencies": {
+        "com.usp.metaaddressables": "0.0.1"
+      }
     },
     "com.usp.metaaddressables": {
       "version": "https://github.com/3iD0loN/MetaAddressables.git?path=/Packages/com.usp.metaaddressables",
