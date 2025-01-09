@@ -1,0 +1,9 @@
+{
+  "name": "com.usp.addressableassetprocessing",
+  "displayName": "Addressables Asset Processing",
+  "version": "0.0.1",
+  "unity": "6000.0",
+  "description": "",
+  "category": "Framework",
+  "type": "library"
+}

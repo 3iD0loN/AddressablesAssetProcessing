@@ -1,0 +1,19 @@
+{
+    "name": "AddressablesAssetProcessing",
+    "rootNamespace": "",
+    "references": [
+        "GUID:2c5f11585ef594e4491a2067ea272f8e",
+        "GUID:69448af7b92c7f342b298e06a37122aa"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
