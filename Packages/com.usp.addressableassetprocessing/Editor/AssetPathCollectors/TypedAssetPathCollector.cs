@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace USP.AddressablesAssetProcessing
 {
@@ -47,6 +48,10 @@ namespace USP.AddressablesAssetProcessing
             else if (type == typeof(GameObject))
             {
                 return "prefab$";
+            }
+            else if (type == typeof(VisualTreeAsset))
+            {
+                return "uxml$";
             }
 
             return string.Empty;
