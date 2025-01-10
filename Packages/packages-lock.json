@@ -253,15 +253,17 @@
       "version": "https://github.com/3iD0loN/MetaAddressables.git?path=/Packages/com.usp.metaaddressables",
       "depth": 0,
       "source": "git",
-      "dependencies": {},
-      "hash": "7a9983d72bc2fbbc95b315974968ab97691e9b5a"
+      "dependencies": {
+        "com.usp.metafileextension": "0.0.1"
+      },
+      "hash": "52edf9c336dacc25d1bb36651ca6e72057417b3f"
     },
     "com.usp.metafileextension": {
       "version": "https://github.com/3iD0loN/MetaFileExtension.git?path=/Packages/com.usp.metafileextension",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "31f5ad646631441b91768815fdac3e9f6c89920a"
+      "hash": "e448003c17585ebfd5271c9a5ac71853c543eed8"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
