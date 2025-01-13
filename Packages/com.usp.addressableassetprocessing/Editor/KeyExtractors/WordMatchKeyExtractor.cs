@@ -7,24 +7,11 @@ namespace USP.AddressablesAssetProcessing
     public class WordMatchKeyExtractor : MatchKeyExtractor
     {
         #region Static Methods
-        private static bool Check(Match match)
-        {
-            return match.Success && !string.IsNullOrEmpty(match.Value);
-        }
-        #endregion
-
-        #region Properties
-        public Dictionary<string, List<string>> Transform = new Dictionary<string, List<string>>();
-        #endregion
-
-        #region Methods
-        public WordMatchKeyExtractor()
-        {
-            MatchPattern = "[^_\\s\\d]+";
-            ExtractMatch = ExtractWords;
-        }
-
-        private void ExtractWords(Match match, string original, HashSet<string> ignored, HashSet<string> result)
+        private static void ExtractWords(Match match,
+            string original,
+            Dictionary<string, List<string>> transform,
+            HashSet<string> ignored,
+            HashSet<string> result)
         {
             // If there is initial match, then:
             if (!Check(match))
@@ -45,8 +32,8 @@ namespace USP.AddressablesAssetProcessing
                 if (!ignored.Contains(match.Value))
                 {
                     // Attempt to find words that are associated with that word.
-                    bool found = Transform.TryGetValue(match.Value, out List<string> words);
-                    
+                    bool found = transform.TryGetValue(match.Value, out List<string> words);
+
                     // If there were no associated words found, then: 
                     if (!found)
                     {
@@ -68,6 +55,14 @@ namespace USP.AddressablesAssetProcessing
                 match = match.NextMatch();
             }
             while (Check(match));
+        }
+        #endregion
+
+        #region Methods
+        public WordMatchKeyExtractor()
+        {
+            MatchPattern = "[^_\\s\\d]+";
+            ExtractMatch = ExtractWords;
         }
         #endregion
     }
