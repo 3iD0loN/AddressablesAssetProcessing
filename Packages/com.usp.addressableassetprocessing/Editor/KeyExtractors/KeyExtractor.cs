@@ -49,7 +49,7 @@ namespace USP.AddressablesAssetProcessing
             while (startIndex < value.Length);
         }
 
-        protected static List<int> IndexOfCamelCase(string value)
+        public static List<int> IndexOfCamelCase(string value)
         {
             var result = new List<int>();
 
@@ -63,7 +63,7 @@ namespace USP.AddressablesAssetProcessing
             result.Add(startIndex);
         }
 
-        protected static List<string> SplitByCamelCase(string value)
+        public static List<string> SplitByCamelCase(string value)
         {
             var result = new List<string>();
 
