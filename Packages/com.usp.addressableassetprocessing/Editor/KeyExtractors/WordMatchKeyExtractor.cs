@@ -13,43 +13,21 @@ namespace USP.AddressablesAssetProcessing
             HashSet<string> ignored,
             HashSet<string> result)
         {
-            // If there is initial match, then:
+            // If there is no initial match, then:
             if (!Check(match))
             {
-                // Add the value as-is.
-                KeyExtractor.Add(original, ignored, result);
+                // Add  original value as-is.
+                Add(original, transform, KeyExtractor.SplitByCamelCase, ignored, result);
 
                 // Do nothing else.
                 return;
             }
 
-            // Otherwise, there is one match.
+            // Otherwise, there is at least one match.
 
             do
             {
-                // If the word is not contained in the set of ignored words, then the word should not be ignored.
-                // If the word should not be ignored, then:
-                if (!ignored.Contains(match.Value))
-                {
-                    // Attempt to find words that are associated with that word.
-                    bool found = transform.TryGetValue(match.Value, out List<string> words);
-
-                    // If there were no associated words found, then: 
-                    if (!found)
-                    {
-                        // Attempt to identify any camel-case words and spit them. 
-                        words = KeyExtractor.SplitByCamelCase(match.Value);
-                    }
-
-                    // There is at least one word in the list of words.
-
-                    // For every word in the list of words, perform the following.
-                    foreach (var word in words)
-                    {
-                        // Add the word to the list of extracted keys.
-                        KeyExtractor.Add(word, ignored, result);
-                    }
-                }
+                Add(match.Value, transform, KeyExtractor.SplitByCamelCase, ignored, result);
 
                 // Move onto the next item in the matches.
                 match = match.NextMatch();
