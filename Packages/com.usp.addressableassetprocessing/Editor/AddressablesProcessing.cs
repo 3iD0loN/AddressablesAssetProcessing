@@ -27,8 +27,6 @@ namespace USP.AddressablesAssetProcessing
             {
                 ProcessAsset(assetFilePath, groupSelector, labelExtractor);
             }
-
-            //UnityEngine.Debug.Log("Processed Labels: " + string.Join(", ", AddressablesProcessing.proccessedlabels.ToArray()));
         }
 
         public static void ProcessAsset(string assetFilePath,
@@ -47,15 +45,7 @@ namespace USP.AddressablesAssetProcessing
             // Extract labels from the folder path.
             var extractedLabels = new HashSet<string>();
             labelExtractor.Extract(assetFilePath, extractedLabels);
-            /*/
-            var x = extractedLabels.Intersect(userData.Asset.Labels).ToArray();
-            var y = userData.Asset.Labels.Intersect(extractedLabels).ToArray();
-            if (x.Length != extractedLabels.Count ||
-                y.Length != userData.Asset.Labels.Count)
-            {
-                UnityEngine.Debug.Log("");
-            }
-            //*/
+
             // Add the extracted labels to the labels associated with the asset.
             extractedLabels.UnionWith(userData.Asset.Labels);
             proccessedlabels.UnionWith(extractedLabels);
