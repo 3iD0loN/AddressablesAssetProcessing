@@ -29,6 +29,11 @@ namespace USP.AddressablesAssetProcessing
             }
         }
 
+        public static void ClearAsset(string assetFilePath)
+        {
+            MetaAddressables.Clear(assetFilePath);
+        }
+
         public static void ProcessAsset(string assetFilePath,
             IGroupSelector groupSelector,
             IKeyExtractor<string, HashSet<string>> labelExtractor)
