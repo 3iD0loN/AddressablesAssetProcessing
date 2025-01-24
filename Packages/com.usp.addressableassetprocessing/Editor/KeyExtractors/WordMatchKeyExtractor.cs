@@ -13,26 +13,7 @@ namespace USP.AddressablesAssetProcessing
             HashSet<string> ignored,
             HashSet<string> result)
         {
-            // If there is no initial match, then:
-            if (!Check(match))
-            {
-                // Add  original value as-is.
-                Add(original, transform, KeyExtractor.SplitByCamelCase, ignored, result);
-
-                // Do nothing else.
-                return;
-            }
-
-            // Otherwise, there is at least one match.
-
-            do
-            {
-                Add(match.Value, transform, KeyExtractor.SplitByCamelCase, ignored, result);
-
-                // Move onto the next item in the matches.
-                match = match.NextMatch();
-            }
-            while (Check(match));
+            MatchKeyExtractor.Add(match, original, transform, KeyExtractor.SplitByCamelCase, ignored, result);
         }
         #endregion
 

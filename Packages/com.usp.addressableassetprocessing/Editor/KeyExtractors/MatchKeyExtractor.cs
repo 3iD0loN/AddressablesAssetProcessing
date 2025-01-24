@@ -1,5 +1,7 @@
+using Codice.CM.Client.Differences;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace USP.AddressablesAssetProcessing
@@ -18,11 +20,21 @@ namespace USP.AddressablesAssetProcessing
             HashSet<string> ignored,
             HashSet<string> result)
         {
+            MatchKeyExtractor.Add(match, original, transform, null, ignored, result);
+        }
+
+        public static void Add(Match match,
+            string original,
+            Dictionary<string, List<string>> transform,
+            Func<string, List<string>> splitter,
+            HashSet<string> ignored,
+            HashSet<string> result)
+        {
             // If there is no initial match, then:
             if (!Check(match))
             {
                 // Add  original value as-is.
-                Add(original, transform, null, ignored, result);
+                Add(original, transform, splitter, ignored, result);
 
                 // Do nothing else.
                 return;
@@ -32,7 +44,7 @@ namespace USP.AddressablesAssetProcessing
 
             do
             {
-                Add(match.Value, transform, null, ignored, result);
+                Add(match.Value, transform, splitter, ignored, result);
 
                 // Move onto the next item in the matches.
                 match = match.NextMatch();
@@ -59,16 +71,30 @@ namespace USP.AddressablesAssetProcessing
             // If there were no associated words found, then: 
             if (!found)
             {
+                // If there is a splitter, then use it to split the value into words.
+                // Otherwise, use the value as the single word.
                 words = splitter != null ? splitter(value) : new List<string> { value };
             }
-
-            // There is at least one word in the list of words.
 
             // For every word in the list of words, perform the following.
             foreach (var word in words)
             {
-                // Add the word to the list of extracted keys.
-                KeyExtractor.Add(word, ignored, result);
+                // Attempt to find words that are associated with that word.
+                found = transform.TryGetValue(word, out List<string> transformedWords);
+
+                // If there were no associated words found, then: 
+                if (!found)
+                {
+                    transformedWords = new List<string> { word };
+                }
+
+                // There is at least one word in the list of words.
+
+                foreach (var transformedWord in transformedWords)
+                {
+                    // Add the word to the list of extracted keys.
+                    KeyExtractor.Add(transformedWord, ignored, result);
+                }
             }
         }
         #endregion
