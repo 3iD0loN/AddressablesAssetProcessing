@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using static UnityEngine.UI.Image;
 
 namespace USP.AddressablesAssetProcessing
 {
@@ -75,24 +76,21 @@ namespace USP.AddressablesAssetProcessing
             }
 
             // Attempt to find words that are associated with that word.
-            bool found = transform.TryGetValue(value, out List<string> words);
-
-            // If there were no associated words found, then: 
-            if (!found)
+            // If there was no valid transformer, or no associated words found, then: 
+            if (transform == null || !transform.TryGetValue(value, out List<string> words))
             {
                 // If there is a splitter, then use it to split the value into words.
                 // Otherwise, use the value as the single word.
                 words = splitter != null ? splitter(value) : new List<string> { value };
             }
+            
 
             // For every word in the list of words, perform the following.
             foreach (var word in words)
             {
                 // Attempt to find words that are associated with that word.
-                found = transform.TryGetValue(word, out List<string> transformedWords);
-
-                // If there were no associated words found, then: 
-                if (!found)
+                // If there was no valid transformer, or no associated words found, then: 
+                if (transform == null || !transform.TryGetValue(word, out List<string> transformedWords))
                 {
                     transformedWords = new List<string> { word };
                 }
@@ -118,6 +116,11 @@ namespace USP.AddressablesAssetProcessing
             }
 
             // Otherwise, the value should not be ignored.
+
+            if (string.Compare("Msg", value, System.StringComparison.Ordinal) == 0)
+            {
+                UnityEngine.Debug.Break();
+            }
 
             result.Add(value);
         }
