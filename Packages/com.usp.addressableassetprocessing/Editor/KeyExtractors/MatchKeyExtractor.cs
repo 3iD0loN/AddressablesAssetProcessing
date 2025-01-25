@@ -8,6 +8,15 @@ namespace USP.AddressablesAssetProcessing
 {
     public class MatchKeyExtractor : IKeyExtractor<string, HashSet<string>>
     {
+        #region Constants
+        public const string AnyPattern = ".*";
+
+        public static readonly MatchKeyExtractor IgnoreKey = new MatchKeyExtractor()
+        {
+            MatchPattern = string.Empty
+        };
+        #endregion
+
         #region Static Methods
         protected static bool Check(Match match)
         {
@@ -60,7 +69,7 @@ namespace USP.AddressablesAssetProcessing
         {
             // If the word is not contained in the set of ignored words, then the word should not be ignored.
             // If the word should not be ignored, then:
-            if (ignored.Contains(value))
+            if (ignored != null && ignored.Contains(value))
             {
                 return;
             }
@@ -93,27 +102,56 @@ namespace USP.AddressablesAssetProcessing
                 foreach (var transformedWord in transformedWords)
                 {
                     // Add the word to the list of extracted keys.
-                    KeyExtractor.Add(transformedWord, ignored, result);
+                    MatchKeyExtractor.Add(transformedWord, ignored, result);
                 }
             }
         }
-        #endregion
 
-        #region Static Fields
-        public static readonly MatchKeyExtractor IgnoreKey = new MatchKeyExtractor();
+        public static void Add(string value,
+            HashSet<string> ignored, HashSet<string> result)
+        {
+            // If the value is in the ignore list, then:
+            if (ignored != null && ignored.Contains(value))
+            {
+                // It will not be added. Do nothing else.
+                return;
+            }
+
+            // Otherwise, the value should not be ignored.
+
+            result.Add(value);
+        }
         #endregion
 
         #region Properties
-        public string MatchPattern { get; set; }
+        /// <summary>
+        /// The .Net RegEx pattern to match a string against. 
+        /// If the pattern is matched, then the extractor attempts to extract a key out of it.
+        /// </summary>
+        public string MatchPattern { get; set; } = AnyPattern;
 
-        public Dictionary<string, List<string>> Transform = new Dictionary<string, List<string>>();
-
+        /// <summary>
+        /// Gets or sets a delegate to extract the information from the match.
+        /// </summary>
         public Action<Match, string, Dictionary<string, List<string>>, HashSet<string>, HashSet<string>> ExtractMatch { get; set; }
 
-        public HashSet<string> Ignored { get; set; }
+        /// <summary>
+        /// Gets or sets a lookup table that defines how a key is transformed into other keys.
+        /// </summary>
+        public Dictionary<string, List<string>> Transform { get; set; } = new Dictionary<string, List<string>>();
+
+        /// <summary>
+        /// Gets or sets a lookup table of keys to ignore if they are exactly matched.
+        /// </summary>
+        public HashSet<string> Ignored { get; set; } = new HashSet<string>();
         #endregion
 
         #region Methods
+        /// <summary>
+        /// Extracts the keys from the input and populates them in the output.
+        /// </summary>
+        /// <param name="assetFileName">The asset file name to extract from.</param>
+        /// <param name="result">The container that is populated by keys.</param>
         public void Extract(string assetFileName, HashSet<string> result)
         {
             if (string.IsNullOrEmpty(MatchPattern))

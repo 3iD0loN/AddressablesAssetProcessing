@@ -5,16 +5,27 @@ using System.Linq;
 using Codice.CM.Common.Tree.Partial;
 using log4net.Util;
 using Unity.VisualScripting.YamlDotNet.Core.Tokens;
+using UnityEngine;
 
 namespace USP.AddressablesAssetProcessing
 {
     public class KeyExtractor : IKeyExtractor<string, HashSet<string>>
     {
+        #region Constants
+        public static readonly MatchKeyExtractor[] IgnoreKeys = new[]
+        {
+            MatchKeyExtractor.IgnoreKey,
+        };
+
+        private static readonly char[] s_uppercase = CreateUppercase();
+        #endregion
+
         #region Types
         protected delegate void CamelCase<T>(string origin, int startIndex, int length, ref T result);
         #endregion
 
         #region Static Methods
+        #region String Manipulation
         private static char[] CreateUppercase()
         {
             const int Length = ('Z' - 'A') + 1;
@@ -97,98 +108,151 @@ namespace USP.AddressablesAssetProcessing
 
             result = origin.Insert(startIndex, " ");
         }
-
-        public static void Add(string value,
-            HashSet<string> ignored, HashSet<string> result)
-        {
-            // If the value is in the ignore list, then:
-            if (ignored != null && ignored.Contains(value))
-            {
-                // It will not be added. Do nothing else.
-                return;
-            }
-
-            // Otherwise, the value should not be ignored.
-
-            result.Add(value);
-        }
+        #endregion
 
         protected static void KeyExtract(IEnumerable<string> directories,
             MatchKeyExtractor[] matchKeyExtractors,
+            Dictionary<string, List<string>> transform,
             HashSet<string> ignored,
             HashSet<string> result)
         {
+            // If there is no valid directories in the path, then:
             if (directories == null)
             {
+                // Do nothing else.
                 return;
             }
 
+            // Otherwise, there are valid directories in the path.
+
+            // For every directory in the path, perform the following:
             foreach (string directory in directories)
             {
-                KeyExtract(directory, matchKeyExtractors, ignored, result);
+                KeyExtract(directory, matchKeyExtractors, transform, ignored, result);
             }
         }
 
-        protected static void KeyExtract(string assetFileName,
+        protected static void KeyExtract(string value,
             MatchKeyExtractor[] matchKeyExtractors,
+            Dictionary<string, List<string>> transform,
             HashSet<string> ignored,
             HashSet<string> result)
         {
+            // If the match key extractors are null or empty, then:
             if (matchKeyExtractors == null || matchKeyExtractors.Length == 0)
             {
-                Add(assetFileName, ignored, result);
+                // Process the value directly without matching anything.
+                MatchKeyExtractor.Add(value, transform, null, ignored, result);
 
+                // Do nothing else.
                 return;
             }
 
+            // Otherwise, the match key extractors are valid and populated.
+
+            // For every match key extractor, perform the following:
             foreach (var matchKeyExtractor in matchKeyExtractors)
             {
-                matchKeyExtractor.Ignored = ignored;
-                matchKeyExtractor.Extract(assetFileName, result);
+                // If there is a valid lookup table, then
+                if (ignored != null)
+                {
+                    // Override the individual lookup table.
+                    matchKeyExtractor.Ignored = ignored;
+                }
+
+                // If there is a valid lookup table, then
+                if (transform != null)
+                {
+                    // Override the individual lookup table.
+                    matchKeyExtractor.Transform = transform;
+                }
+
+                // Extract the keys out of the value
+                matchKeyExtractor.Extract(value, result);
             }
         }
-        #endregion
-
-        #region Static Fields
-        private static char[] s_uppercase = CreateUppercase();
-
-        public static readonly MatchKeyExtractor[] IgnoreKeys = new[]
-        {
-        MatchKeyExtractor.IgnoreKey,
-    };
         #endregion
 
         #region Properties
         public IStringSeparator Separator { get; set; }
 
-        public HashSet<string> Added { get; set; }
-
+        /// <summary>
+        /// Gets or sets a collection of key extractors that process each directory.
+        /// </summary>
+        /// <remarks>
+        /// Processes them in a "key extractor major" sequence:
+        /// directory 1 <-> extractor 1,
+        /// directory 1 <-> extractor 2,
+        /// ...
+        /// directory 1 <-> extractor N,
+        /// directory 2 <-> extractor 1,
+        /// ...
+        /// directory M <-> extractor N
+        /// </remarks>
         public MatchKeyExtractor[] DirectoryKeyExtractors { get; set; }
 
+        /// <summary>
+        /// Gets or sets a collection of key extractors that processes the filename.
+        /// </summary>
         public MatchKeyExtractor[] FilenameKeyExtractors { get; set; }
 
+        /// <summary>
+        /// Gets or sets a lookup table that defines how a key is transformed into other keys.
+        /// </summary>
+        public Dictionary<string, List<string>> Transform { get; set; }
+
+        /// <summary>
+        /// Gets or sets a lookup table of keys to ignore if they are exactly matched.
+        /// </summary>
         public HashSet<string> Ignored { get; set; }
+
+        /// <summary>
+        /// Gets or sets a set of keys to add consistently across.
+        /// </summary>
+        public HashSet<string> Added { get; set; }
         #endregion
 
         #region Methods
+        /// <summary>
+        /// Creates a new instance of the <see cref="KeyExtractor"/> class.
+        /// </summary>
         public KeyExtractor()
         {
             Separator = default;
+
+            // Defaults add every directory in the path as a key.
+            DirectoryKeyExtractors = default;
+
+            // Defaults add the filename in the path as a key.
+            FilenameKeyExtractors = default;
+
             Added = new HashSet<string>();
-            DirectoryKeyExtractors = new MatchKeyExtractor[0];
-            FilenameKeyExtractors = new MatchKeyExtractor[0];
-            Ignored = new HashSet<string>();
         }
 
+        /// <summary>
+        /// Extracts the keys from the input and populates them in the output.
+        /// </summary>
+        /// <param name="assetFileName">The asset file name to extract from.</param>
+        /// <param name="result">The container that is populated by keys.</param>
         public void Extract(string assetFilePath, HashSet<string> result)
         {
+            // If there is no valid separator, then:
             if (Separator == null)
             {
+                // Do nothing.
                 return;
             }
 
+            // Otherwise, there is a valid separator.
+
             // Split the string by the delimiters.
             string[] splitAssetFilePath = Separator.Get(assetFilePath);
+
+            // Remove the asset file name, which is the last element
+            // from the split path to get just the directories.
+            IEnumerable<string> directories = splitAssetFilePath.SkipLast(1);
+
+            KeyExtract(directories, DirectoryKeyExtractors, Transform, Ignored, result);
 
             // Get the last item in the array, which is the asset file name.
             int lastIndex = splitAssetFilePath.Length - 1;
@@ -197,14 +261,9 @@ namespace USP.AddressablesAssetProcessing
             // Remove the file extension from the asset file name.
             string assetFileName = Path.GetFileNameWithoutExtension(last);
 
-            KeyExtract(assetFileName, FilenameKeyExtractors, Ignored, result);
+            KeyExtract(assetFileName, FilenameKeyExtractors, Transform, Ignored, result);
 
-            // Remove the asset file name, which is the last element
-            // from the split path to get just the directories.
-            IEnumerable<string> directories = splitAssetFilePath.SkipLast(1);
-
-            KeyExtract(directories, DirectoryKeyExtractors, Ignored, result);
-
+            // Add the constant keys to the result.
             result.UnionWith(Added);
         }
         #endregion
