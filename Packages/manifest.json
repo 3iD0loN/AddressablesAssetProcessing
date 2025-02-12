@@ -13,6 +13,7 @@
     "com.unity.timeline": "1.8.7",
     "com.unity.ugui": "2.0.0",
     "com.unity.visualscripting": "1.9.4",
+    "com.usp.addressablesbuildgraph": "https://github.com/3iD0loN/AddressablesBuildGraph.git?path=/Packages/com.usp.addressablesbuildgraph",
     "com.usp.metaaddressables": "https://github.com/3iD0loN/MetaAddressables.git?path=/Packages/com.usp.metaaddressables",
     "com.usp.metafileextension": "https://github.com/3iD0loN/MetaFileExtension.git?path=/Packages/com.usp.metafileextension",
     "com.unity.modules.accessibility": "1.0.0",

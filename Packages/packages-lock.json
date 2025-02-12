@@ -249,6 +249,13 @@
         "com.usp.metaaddressables": "0.0.1"
       }
     },
+    "com.usp.addressablesbuildgraph": {
+      "version": "https://github.com/3iD0loN/AddressablesBuildGraph.git?path=/Packages/com.usp.addressablesbuildgraph",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "3dbd89f95959d93f7f90fb47a2d9213bf5d9a54a"
+    },
     "com.usp.metaaddressables": {
       "version": "https://github.com/3iD0loN/MetaAddressables.git?path=/Packages/com.usp.metaaddressables",
       "depth": 0,
