@@ -5,7 +5,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "07514511512e3cd45c2c737cb0b393b9ea701f72"
+      "hash": "46e771daa4b2b00db9bd7356ab3c8874c9d83cb4"
     },
     "com.unity.addressables": {
       "version": "2.2.2",
@@ -256,14 +256,14 @@
       "dependencies": {
         "com.usp.metafileextension": "0.0.1"
       },
-      "hash": "52edf9c336dacc25d1bb36651ca6e72057417b3f"
+      "hash": "b8886f4cb5c9ec408fb922aa5199ee5fafc91d24"
     },
     "com.usp.metafileextension": {
       "version": "https://github.com/3iD0loN/MetaFileExtension.git?path=/Packages/com.usp.metafileextension",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "e448003c17585ebfd5271c9a5ac71853c543eed8"
+      "hash": "8bd8b2727e15bbd7920fab41fce83b279f2b12f0"
     },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
