@@ -8,6 +8,10 @@ using UnityEditor.AddressableAssets.Build.DataBuilders;
 using UnityEditor.Build.Pipeline;
 
 using USP.AddressablesBuildGraph;
+using UnityEditor.VersionControl;
+using UnityEditor.AddressableAssets;
+using USP.MetaAddressables;
+using USP.AddressablesAssetProcessing;
 
 
 public class AddressablesDeduplicator
@@ -16,24 +20,27 @@ public class AddressablesDeduplicator
     [MenuItem("Tools/Addressables Deduplication")]
     private static void Run()
     {
-        ReturnCode exitCode = AddressableBuildSpoof.GetExtractData(
-            out AddressableAssetsBuildContext aaBuildContext,
-            out ExtractDataTask extractDataTask);
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        var buildInfo = AddressablesBuildInfo.Create(settings);
 
-        if (exitCode < ReturnCode.Success)
+        if (buildInfo == null)
         {
             return;
         }
 
-        var buildInfo = AddressablesBuildInfo.Create(aaBuildContext, extractDataTask.WriteData);
+        var duplicatedImplicitRoots = from asset in buildInfo.Assets
+                                                 where asset.IsDuplicate && asset.IsImplicitRoot
+                                                 select asset;
 
-        var duplicatedImplicitInflectionAssets = from asset in buildInfo.Assets
-                where asset.IsDuplicate && !asset.IsAddressable && asset.AssetDependents.Any(x => x.IsAddressable)
-                select asset;
+        foreach (AssetInfo duplicatedImplicitRoot in duplicatedImplicitRoots)
+        {
+            string assetFilePath = duplicatedImplicitRoot.FilePath;
 
-        var duplicatedImplicitInflectionAssetArray = duplicatedImplicitInflectionAssets.ToArray();
+            // Apply the asset file path to the group selector to set the appropriate group template.
+            //groupSelector.Apply(assetFilePath);
 
-        Debug.Log("x");
+            MetaAddressables.UserData userData = MetaAddressables.Read(assetFilePath);
+        }
     }
     #endregion
 }
