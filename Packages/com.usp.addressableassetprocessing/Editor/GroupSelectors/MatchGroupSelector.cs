@@ -35,21 +35,22 @@ namespace USP.AddressablesAssetProcessing
 
         private AddressableAssetGroupTemplate Process(string assetFilePath)
         {
-            if (string.IsNullOrEmpty(MatchPattern))
+            // If there is no valid match pattern or valid selector, then:
+            if (string.IsNullOrEmpty(MatchPattern) || Select == null)
             {
+                // Return an invalid group template. Do nothing else.
                 return default;
             }
 
-            if (Select == null)
-            {
-                return default;
-            }
+            // Otherwise, there is a valid match pattern and selector.
 
             // Match the patterns against the asset file name.
             Match match = Regex.Match(assetFilePath, MatchPattern);
 
-            var key = Select(match, assetFilePath);
+            // Select the key associated with match.
+            string key = Select(match, assetFilePath);
 
+            // Get template associated with the key.
             return Get(key);
         }
 
