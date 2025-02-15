@@ -4,7 +4,7 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public class ConstantGroupSelector : IGroupSelector
+    public class ConstantGroupSelector : IGroupSelector<string>
     {
         #region Properties
         public AddressableAssetGroupTemplate GroupTemplate { get; set; }

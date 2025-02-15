@@ -8,7 +8,7 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public class MatchGroupSelector : IGroupSelector
+    public class MatchGroupSelector : IGroupSelector<string>
     {
         #region Properties
         public string MatchPattern { get; set; }

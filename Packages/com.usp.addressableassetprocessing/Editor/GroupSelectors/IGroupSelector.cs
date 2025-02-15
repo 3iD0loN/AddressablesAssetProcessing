@@ -1,9 +1,9 @@
 namespace USP.AddressablesAssetProcessing
 {
-    public interface IGroupSelector
+    public interface IGroupSelector<T>
     {
         #region Methods
-        void Apply(string assetFileName);
+        void Apply(T value);
         #endregion
     }
 }
