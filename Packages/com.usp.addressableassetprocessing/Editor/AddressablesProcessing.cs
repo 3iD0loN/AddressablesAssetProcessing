@@ -1,11 +1,9 @@
 using System.Collections.Generic;
-using System.Linq;
 
 using UnityEditor.AddressableAssets;
 
 namespace USP.AddressablesAssetProcessing
 {
-    using UnityEditor.VersionControl;
     using USP.MetaAddressables;
 
     public static class AddressablesProcessing
