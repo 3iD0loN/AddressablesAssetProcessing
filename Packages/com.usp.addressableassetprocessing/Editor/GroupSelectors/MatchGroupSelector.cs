@@ -8,35 +8,19 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public class MatchGroupSelector : IGroupSelector<string>
+    public class MatchGroupSelector : MappedGroupSelector<string, string>
     {
         #region Properties
         public string MatchPattern { get; set; }
 
-        public Dictionary<string, AddressableAssetGroupTemplate> GroupTemplateByKey
-        {
-            get;
-            set;
-        }
-
-        public Func<Match, string, string> Select { get; set; }
+        public Func<Match, string, string> Transform { get; set; }
         #endregion
 
         #region Methods
-        public MatchGroupSelector()
-        {
-            GroupTemplateByKey = new Dictionary<string, AddressableAssetGroupTemplate>();
-        }
-
-        public void Apply(string assetFilePath)
-        {
-            MetaAddressables.factory.ActiveGroupTemplate = Process(assetFilePath);
-        }
-
-        private AddressableAssetGroupTemplate Process(string assetFilePath)
+        protected override string Select(string assetFilePath)
         {
             // If there is no valid match pattern or valid selector, then:
-            if (string.IsNullOrEmpty(MatchPattern) || Select == null)
+            if (string.IsNullOrEmpty(MatchPattern) || Transform == null)
             {
                 // Return an invalid group template. Do nothing else.
                 return default;
@@ -48,28 +32,7 @@ namespace USP.AddressablesAssetProcessing
             Match match = Regex.Match(assetFilePath, MatchPattern);
 
             // Select the key associated with match.
-            string key = Select(match, assetFilePath);
-
-            // Get template associated with the key.
-            return Get(key);
-        }
-
-        public AddressableAssetGroupTemplate Get(string key)
-        {
-            bool found = GroupTemplateByKey.TryGetValue(key,
-                    out AddressableAssetGroupTemplate result);
-
-            if (found)
-            {
-                return result;
-            }
-
-            return default;
-        }
-
-        public void Set(string key, AddressableAssetGroupTemplate value)
-        {
-            GroupTemplateByKey.Add(key, value);
+            return Transform(match, assetFilePath);
         }
         #endregion
     }
