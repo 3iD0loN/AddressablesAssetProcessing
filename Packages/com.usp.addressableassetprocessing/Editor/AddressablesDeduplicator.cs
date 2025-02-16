@@ -50,13 +50,18 @@ public class AddressablesDeduplicator
         }
 
         var duplicatedImplicitRoots = from asset in buildInfo.Assets
-                                      where asset.IsValid && asset.IsDuplicate && asset.IsImplicitRoot
+                                      where IsValidDuplicateImplicitRoot(asset)
                                       select asset;
 
         foreach (AssetInfo duplicatedImplicitRoot in duplicatedImplicitRoots)
         {
             ProcessAsset(settings, groupSelector, duplicatedImplicitRoot);
         }
+    }
+
+    private static bool IsValidDuplicateImplicitRoot(AssetInfo asset)
+    {
+        return asset.IsValid && asset.IsDuplicate && asset.IsImplicitRoot;
     }
 
     private static void ProcessAsset(AddressableAssetSettings settings,
