@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+
 using UnityEngine;
 using UnityEngine.UIElements;
+
+using UnityEditor;
 
 namespace USP.AddressablesAssetProcessing
 {
@@ -29,9 +32,9 @@ namespace USP.AddressablesAssetProcessing
 
         protected static string GetFileExtension(Type type)
         {
-            if (type == typeof(Texture))
+            if (type == typeof(Texture2D))
             {
-                return "png$|psd$";
+                return "jpg$|png$|psd$|tga$|bmp$|tif$";
             }
             else if (type == typeof(Animation))
             {
@@ -49,9 +52,21 @@ namespace USP.AddressablesAssetProcessing
             {
                 return "prefab$";
             }
+            else if (type == typeof(SceneAsset))
+            {
+                return "unity$";
+            }
             else if (type == typeof(VisualTreeAsset))
             {
                 return "uxml$";
+            }
+            else if (type == typeof(StyleSheet))
+            {
+                return "uss$";
+            }
+            else if (type == typeof(AudioClip))
+            {
+                return "aif$|wav$|mp3$|ogg$";
             }
 
             return string.Empty;
