@@ -12,33 +12,6 @@ using static UnityEditor.AddressableAssets.Build.Layout.BuildLayout.Bundle.Bundl
 public class AddressablesDeduplicator
 {
     #region Static Methods
-    [MenuItem("Tools/Addressables Deduplication")]
-    private static void Run()
-    {
-        var x = new Dictionary<int, List<AddressableAssetGroupTemplate>>();
-
-        var settings = AddressableAssetSettingsDefaultObject.Settings;
-        foreach (AddressableAssetGroupTemplate groupTemplate in settings.GroupTemplateObjects)
-        {
-            if (groupTemplate == null)
-            {
-                return;
-            }
-
-            var y = new MetaAddressables.GroupData(groupTemplate);
-            bool found = x.TryGetValue(y.GetHashCode(),
-                out List<AddressableAssetGroupTemplate> groupTemplateList);
-
-            if (!found)
-            {
-                groupTemplateList = new List<AddressableAssetGroupTemplate>();
-                x.Add(y.GetHashCode(), groupTemplateList);
-            }
-
-            groupTemplateList.Add(groupTemplate);
-        }
-    }
-
     public static void ProcessAssets(IGroupSelector<HashSet<MetaAddressables.GroupData>> groupSelector)
     {
         const int MaxIterations = 10;
