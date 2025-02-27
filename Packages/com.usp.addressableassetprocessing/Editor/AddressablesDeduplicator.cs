@@ -46,7 +46,7 @@ public class AddressablesDeduplicator
     }
 
     private static void ProcessAsset(AddressableAssetSettings settings,
-        IGroupExtractor<HashSet<MetaAddressables.GroupData>> groupSelector,
+        IExtractor<HashSet<MetaAddressables.GroupData>, AddressableAssetGroupTemplate> groupSelector,
         AssetInfo duplicatedImplicitRoot)
     {
         if (duplicatedImplicitRoot == null ||
