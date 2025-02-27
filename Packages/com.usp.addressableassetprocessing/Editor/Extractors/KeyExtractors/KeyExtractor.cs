@@ -9,7 +9,7 @@ using UnityEngine;
 
 namespace USP.AddressablesAssetProcessing
 {
-    public class KeyExtractor : IKeyExtractor<string, HashSet<string>>
+    public class KeyExtractor : IExtractor<string, HashSet<string>>
     {
         #region Constants
         public static readonly MatchKeyExtractor[] IgnoreKeys = new[]

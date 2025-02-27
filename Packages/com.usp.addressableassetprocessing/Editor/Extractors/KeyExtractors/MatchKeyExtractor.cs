@@ -7,7 +7,7 @@ using static UnityEngine.UI.Image;
 
 namespace USP.AddressablesAssetProcessing
 {
-    public class MatchKeyExtractor : IKeyExtractor<string, HashSet<string>>
+    public class MatchKeyExtractor : IExtractor<string, HashSet<string>>
     {
         #region Constants
         public const string AnyPattern = ".*";

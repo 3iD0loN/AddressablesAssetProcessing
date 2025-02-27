@@ -1,6 +1,6 @@
 namespace USP.AddressablesAssetProcessing
 {
-    public interface IKeyExtractor<I, O>
+    public interface IExtractor<I, O>
     {
         /// <summary>
         /// Extracts the keys from the input and populates them in the output.
