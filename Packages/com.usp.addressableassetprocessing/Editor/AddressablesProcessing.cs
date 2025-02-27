@@ -5,6 +5,7 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using DocumentFormat.OpenXml.Spreadsheet;
     using USP.MetaAddressables;
 
     public static class AddressablesProcessing
@@ -30,7 +31,8 @@ namespace USP.AddressablesAssetProcessing
             IKeyExtractor<string, HashSet<string>> labelExtractor)
         {
             // Select the asset file path to the group selector to set the appropriate group template.
-            AddressableAssetGroupTemplate group = groupSelector.Select(assetFilePath);
+            AddressableAssetGroupTemplate group = null;
+            groupSelector.Extract(assetFilePath, ref group);
 
             string address = MetaAddressables.AssetData.SimplifyAddress(assetFilePath);
 

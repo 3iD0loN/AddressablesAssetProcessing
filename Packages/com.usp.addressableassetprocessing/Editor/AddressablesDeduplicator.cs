@@ -59,7 +59,8 @@ public class AddressablesDeduplicator
         PopulateGroups(duplicatedImplicitRoot.DependentAssets, groups);
 
         // Apply the asset file path to the group selector to set the appropriate group template.
-        AddressableAssetGroupTemplate group = groupSelector.Select(groups);
+        AddressableAssetGroupTemplate group = null;
+        groupSelector.Extract(groups, ref group);
 
         string address = MetaAddressables.AssetData.SimplifyAddress(duplicatedImplicitRoot.FilePath);
 
