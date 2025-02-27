@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class MetaAddressablesProcessing
 {
-    public static void SetAddressableAsset(string assetFilePath, AddressableAssetGroupTemplate group, Func<string, string> setAddress, HashSet<string> labels)
+    public static void SetAddressableAsset(string assetFilePath, AddressableAssetGroupTemplate group, string address, HashSet<string> labels)
     {
         // MetaAddressables data cration will default to using this group if there is no metadata associated. 
         MetaAddressables.factory.ActiveGroupTemplate = group;
@@ -21,7 +21,7 @@ public static class MetaAddressablesProcessing
         userData.Asset.Labels.UnionWith(labels);
 
         // Take the current address of the asset and simplify it.
-        userData.Asset.Address = setAddress?.Invoke(userData.Asset.Address);
+        userData.Asset.Address = address;
 
         // Generate Addressables groups from the Meta file.
         // This is done before saving MetaAddressables to file in case we find groups that already match.

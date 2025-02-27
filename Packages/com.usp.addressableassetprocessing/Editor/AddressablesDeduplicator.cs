@@ -62,7 +62,8 @@ public class AddressablesDeduplicator
 
         // Apply the asset file path to the group selector to set the appropriate group template.
         AddressableAssetGroupTemplate group = groupSelector.Select(groups);
-        MetaAddressables.factory.ActiveGroupTemplate = group;
+
+        string address = MetaAddressables.AssetData.SimplifyAddress(duplicatedImplicitRoot.FilePath);
 
         var labels = new HashSet<string>{ "Shared Resources" };
         foreach (AssetInfo dependentAsset in duplicatedImplicitRoot.DependentAssets)
@@ -70,7 +71,7 @@ public class AddressablesDeduplicator
             labels.UnionWith(dependentAsset.Labels);
         }
 
-        MetaAddressablesProcessing.SetAddressableAsset(duplicatedImplicitRoot.FilePath, group, MetaAddressables.AssetData.SimplifyAddress, labels);
+        MetaAddressablesProcessing.SetAddressableAsset(duplicatedImplicitRoot.FilePath, group, address, labels);
 
         var settings = AddressableAssetSettingsDefaultObject.Settings;
         MetaAddressablesProcessing.SetGlobalLabels(settings, labels);

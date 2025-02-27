@@ -33,11 +33,13 @@ namespace USP.AddressablesAssetProcessing
             // Select the asset file path to the group selector to set the appropriate group template.
             AddressableAssetGroupTemplate group = groupSelector.Select(assetFilePath);
 
+            string address = MetaAddressables.AssetData.SimplifyAddress(assetFilePath);
+
             // Extract labels from the folder path.
             var extractedLabels = new HashSet<string>();
             labelExtractor.Extract(assetFilePath, extractedLabels);
 
-            MetaAddressablesProcessing.SetAddressableAsset(assetFilePath, group, MetaAddressables.AssetData.SimplifyAddress, extractedLabels);
+            MetaAddressablesProcessing.SetAddressableAsset(assetFilePath, group, address, extractedLabels);
 
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             MetaAddressablesProcessing.SetGlobalLabels(settings, extractedLabels);
