@@ -12,12 +12,12 @@ namespace USP.AddressablesAssetProcessing
     {
         #region Static Methods
         public static void ProcessAssets(IEnumerable<string> assetFilePaths,
-            IExtractor<string, AddressableAssetGroupTemplate> groupSelector,
+            IExtractor<string, AddressableAssetGroupTemplate> groupExtractor,
             IExtractor<string, HashSet<string>> labelExtractor)
         {
             foreach (string assetFilePath in assetFilePaths)
             {
-                ProcessAsset(assetFilePath, groupSelector, labelExtractor);
+                ProcessAsset(assetFilePath, groupExtractor, labelExtractor);
             }
         }
 
@@ -27,12 +27,12 @@ namespace USP.AddressablesAssetProcessing
         }
 
         public static void ProcessAsset(string assetFilePath,
-            IExtractor<string, AddressableAssetGroupTemplate> groupSelector,
+            IExtractor<string, AddressableAssetGroupTemplate> groupExtractor,
             IExtractor<string, HashSet<string>> labelExtractor)
         {
             // Select the asset file path to the group selector to set the appropriate group template.
             AddressableAssetGroupTemplate group = null;
-            groupSelector.Extract(assetFilePath, ref group);
+            groupExtractor.Extract(assetFilePath, ref group);
 
             string address = MetaAddressables.AssetData.SimplifyAddress(assetFilePath);
 

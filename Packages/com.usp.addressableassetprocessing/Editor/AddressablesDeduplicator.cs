@@ -46,7 +46,7 @@ public class AddressablesDeduplicator
     }
 
     private static void ProcessAsset(AddressableAssetSettings settings,
-        IExtractor<HashSet<MetaAddressables.GroupData>, AddressableAssetGroupTemplate> groupSelector,
+        IExtractor<HashSet<MetaAddressables.GroupData>, AddressableAssetGroupTemplate> groupExtractor,
         AssetInfo duplicatedImplicitRoot)
     {
         if (duplicatedImplicitRoot == null ||
@@ -60,7 +60,7 @@ public class AddressablesDeduplicator
 
         // Apply the asset file path to the group selector to set the appropriate group template.
         AddressableAssetGroupTemplate group = null;
-        groupSelector.Extract(groups, ref group);
+        groupExtractor.Extract(groups, ref group);
 
         string address = MetaAddressables.AssetData.SimplifyAddress(duplicatedImplicitRoot.FilePath);
 
