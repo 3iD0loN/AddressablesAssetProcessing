@@ -2,7 +2,7 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public class SimplifiedAddressExtractor : IKeyExtractor<string, string>
+    public class SimplifiedAddressExtractor : IExtractor<string, string>
     {
         /// <summary>
         /// Extracts the keys from the input and populates them in the output.
