@@ -6,7 +6,7 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public abstract class MappedGroupSelector<I, O> : IGroupSelector<I>
+    public abstract class MappedGroupSelector<I, O> : IGroupExtractor<I>
     {
         #region Properties
         public IDictionary<O, AddressableAssetGroupTemplate> GroupTemplateByKey

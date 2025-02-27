@@ -11,7 +11,7 @@ using USP.MetaAddressables;
 public class AddressablesDeduplicator
 {
     #region Static Methods
-    public static void ProcessAssets(IGroupSelector<HashSet<MetaAddressables.GroupData>> groupSelector)
+    public static void ProcessAssets(IGroupExtractor<HashSet<MetaAddressables.GroupData>> groupSelector)
     {
         const int MaxIterations = 10;
         for (int i = 0; i < MaxIterations; ++i)
@@ -46,7 +46,7 @@ public class AddressablesDeduplicator
     }
 
     private static void ProcessAsset(AddressableAssetSettings settings,
-        IGroupSelector<HashSet<MetaAddressables.GroupData>> groupSelector,
+        IGroupExtractor<HashSet<MetaAddressables.GroupData>> groupSelector,
         AssetInfo duplicatedImplicitRoot)
     {
         if (duplicatedImplicitRoot == null ||
