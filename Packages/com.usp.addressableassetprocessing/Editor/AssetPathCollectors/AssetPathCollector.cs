@@ -8,13 +8,13 @@ namespace USP.AddressablesAssetProcessing
     public class AssetPathCollector
     {
         #region Fields
-        protected bool _recacheMatch = true;
-
         private string _matchPattern;
 
-        protected bool _recacheIgnore = true;
-
         private string _ignoreMatchPattern;
+
+        protected bool _recacheMatch;
+
+        protected bool _recacheIgnore;
         #endregion
 
         #region Properties
@@ -42,14 +42,25 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Methods
-        public IEnumerable<string> GetFiles(string parentDirectoryPath)
+        public AssetPathCollector(string matchPattern = null,
+            string ignoreMatchPattern = null,
+            SearchOption searchOptions = SearchOption.AllDirectories)
+        {
+            _matchPattern = matchPattern;
+            _ignoreMatchPattern = ignoreMatchPattern;
+            SearchOptions = searchOptions;
+            _recacheMatch = true;
+            _recacheIgnore = true;
+        }
+
+        public void GetFiles(string parentDirectoryPath, ref List<string> result)
         {
             const string AllFilesWithExtensionsPattern = "*.*";
 
-            var files = Directory.GetFiles(parentDirectoryPath, AllFilesWithExtensionsPattern, SearchOptions)
+            IEnumerable<string> files = Directory.GetFiles(parentDirectoryPath, AllFilesWithExtensionsPattern, SearchOptions)
                 .Where(FilepathMatches);
 
-            return files;
+            result.AddRange(files);
         }
 
         protected virtual string GetMatchPattern() => MatchPattern;

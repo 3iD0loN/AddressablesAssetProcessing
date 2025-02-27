@@ -13,6 +13,14 @@ namespace USP.AddressablesAssetProcessing
     public class TypedAssetPathCollector : AssetPathCollector
     {
         #region Static Methods
+        public static string FormatTypes(params Type[] assetTypes)
+        {
+            var fileExtensions = GetFileExtensions(assetTypes);
+            string combined = string.Join("|", fileExtensions);
+
+            return $"\\.({combined})";
+        }
+
         protected static string[] GetFileExtensions(IEnumerable<Type> types)
         {
             var result = new string[types.Count()];
@@ -74,43 +82,51 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Fields
-        private string _assetTypeMatchPattern;
-
         private string _internalMatchPattern;
         #endregion
 
+        #region Properties
+        private string AssetTypeMatchPattern { get; set; }
+        #endregion
+
         #region Methods
-        public TypedAssetPathCollector(params Type[] assetTypes)
+        public TypedAssetPathCollector(params Type[] assetTypes) :
+            this(".*{0}",
+            FormatTypes(assetTypes))
         {
-            SearchOptions = SearchOption.AllDirectories;
+        }
 
-            var fileExtensions = GetFileExtensions(assetTypes);
-            string combined = string.Join("|", fileExtensions);
-
-            _assetTypeMatchPattern = $"\\.({combined})";
-            MatchPattern = ".*{0}";
-            _recacheMatch = true;
+        public TypedAssetPathCollector(
+            string matchPattern = null,
+            string assetTypeMatchPattern = null,
+            string ignorePattern = null,
+            SearchOption searchOptions = SearchOption.AllDirectories) :
+            base(matchPattern, ignorePattern, searchOptions)
+        {
+            AssetTypeMatchPattern = assetTypeMatchPattern;
         }
 
         protected override string GetMatchPattern()
         {
-            if (_recacheMatch)
+            if (!_recacheMatch)
             {
-                if (string.IsNullOrEmpty(_assetTypeMatchPattern))
-                {
-                    _internalMatchPattern = MatchPattern;
-                }
-                else if (string.IsNullOrEmpty(MatchPattern))
-                {
-                    _internalMatchPattern = _assetTypeMatchPattern;
-                }
-                else
-                {
-                    _internalMatchPattern = string.Format(MatchPattern, _assetTypeMatchPattern);
-                }
-
-                _recacheMatch = false;
+                return _internalMatchPattern;
             }
+
+            if (string.IsNullOrEmpty(AssetTypeMatchPattern))
+            {
+                _internalMatchPattern = MatchPattern;
+            }
+            else if (string.IsNullOrEmpty(MatchPattern))
+            {
+                _internalMatchPattern = AssetTypeMatchPattern;
+            }
+            else
+            {
+                _internalMatchPattern = string.Format(MatchPattern, AssetTypeMatchPattern);
+            }
+
+            _recacheMatch = false;
 
             return _internalMatchPattern;
         }
