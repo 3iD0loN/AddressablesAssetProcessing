@@ -22,7 +22,7 @@ namespace USP.AddressablesAssetProcessing
             GroupTemplateByKey = new SortedDictionary<int, AddressableAssetGroupTemplate>();
         }
 
-        protected override int Select(HashSet<MetaAddressables.GroupData> groups)
+        protected override int GetInternalKey(HashSet<MetaAddressables.GroupData> groups)
         {
             // For every group template in the order of priority, perform the following: 
             foreach (var pair in GroupTemplateByKey)

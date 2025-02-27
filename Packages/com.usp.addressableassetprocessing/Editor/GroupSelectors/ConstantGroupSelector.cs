@@ -16,7 +16,7 @@ namespace USP.AddressablesAssetProcessing
             GroupTemplate = groupTemplate;
         }
 
-        public void Apply(string assetFileName)
+        public void Select(string assetFileName)
         {
             MetaAddressables.factory.ActiveGroupTemplate = GroupTemplate;
         }

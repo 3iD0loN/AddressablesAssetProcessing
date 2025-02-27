@@ -13,26 +13,26 @@ namespace USP.AddressablesAssetProcessing
         #region Properties
         public string MatchPattern { get; set; }
 
-        public Func<Match, string, string> Transform { get; set; }
+        public Func<Match, string, string> MatchToKey { get; set; }
         #endregion
 
         #region Methods
-        protected override string Select(string assetFilePath)
+        protected override string GetInternalKey(string assetFilePath)
         {
             // If there is no valid match pattern or valid selector, then:
-            if (string.IsNullOrEmpty(MatchPattern) || Transform == null)
+            if (string.IsNullOrEmpty(MatchPattern) || MatchToKey == null)
             {
                 // Return an invalid group template. Do nothing else.
                 return default;
             }
 
-            // Otherwise, there is a valid match pattern and selector.
+            // Otherwise, both the match pattern and selector are valid.
 
             // Match the patterns against the asset file name.
             Match match = Regex.Match(assetFilePath, MatchPattern);
 
             // Select the key associated with match.
-            return Transform(match, assetFilePath);
+            return MatchToKey(match, assetFilePath);
         }
         #endregion
     }

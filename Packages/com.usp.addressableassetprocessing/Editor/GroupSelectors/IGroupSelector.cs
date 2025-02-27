@@ -1,9 +1,11 @@
+using UnityEditor.AddressableAssets.Settings;
+
 namespace USP.AddressablesAssetProcessing
 {
     public interface IGroupSelector<T>
     {
         #region Methods
-        void Apply(T value);
+        AddressableAssetGroupTemplate Select(T key);
         #endregion
     }
 }

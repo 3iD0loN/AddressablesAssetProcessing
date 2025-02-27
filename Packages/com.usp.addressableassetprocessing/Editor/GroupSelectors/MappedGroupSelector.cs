@@ -22,29 +22,22 @@ namespace USP.AddressablesAssetProcessing
             GroupTemplateByKey = new Dictionary<O, AddressableAssetGroupTemplate>();
         }
 
-        public void Apply(I groups)
+        public AddressableAssetGroupTemplate Select(I inputKey)
         {
-            O key = Select(groups);
+            O internalKey = GetInternalKey(inputKey);
 
             // Get template associated with the key.
-            AddressableAssetGroupTemplate groupTemplate = Get(key);
-
-            MetaAddressables.factory.ActiveGroupTemplate = groupTemplate;
+            return Get(internalKey);
         }
 
-        protected abstract O Select(I groups);
+        protected abstract O GetInternalKey(I groups);
 
-        public AddressableAssetGroupTemplate Get(O key)
+        public virtual AddressableAssetGroupTemplate Get(O key)
         {
-            bool found = GroupTemplateByKey.TryGetValue(key,
+            GroupTemplateByKey.TryGetValue(key,
                     out AddressableAssetGroupTemplate result);
 
-            if (found)
-            {
-                return result;
-            }
-
-            return default;
+            return result;
         }
 
         public void Set(O key, AddressableAssetGroupTemplate value)
