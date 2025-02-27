@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 using UnityEditor.AddressableAssets;
@@ -36,13 +37,13 @@ namespace USP.AddressablesAssetProcessing
             var extractedLabels = new HashSet<string>();
             labelExtractor.Extract(assetFilePath, extractedLabels);
 
-            SetAddressableAsset(assetFilePath, extractedLabels);
+            SetAddressableAsset(assetFilePath, MetaAddressables.AssetData.SimplifyAddress, extractedLabels);
 
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             SetLabels(settings, extractedLabels);
         }
 
-        private static void SetAddressableAsset(string assetFilePath, HashSet<string> labels)
+        private static void SetAddressableAsset(string assetFilePath, Func<string, string> setAddress, HashSet<string> labels)
         {
             // Get the user data associated with the asset file path.
             MetaAddressables.UserData userData = MetaAddressables.Read(assetFilePath);
@@ -58,7 +59,7 @@ namespace USP.AddressablesAssetProcessing
             userData.Asset.Labels.UnionWith(labels);
 
             // Take the current address of the asset and simplify it.
-            userData.Asset.Address = MetaAddressables.AssetData.SimplifyAddress(userData.Asset.Address);
+            userData.Asset.Address = setAddress?.Invoke(userData.Asset.Address);
 
             // Generate Addressables groups from the Meta file.
             // This is done before saving MetaAddressables to file in case we find groups that already match.
