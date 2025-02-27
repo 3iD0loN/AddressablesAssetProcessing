@@ -12,11 +12,11 @@ namespace USP.AddressablesAssetProcessing
     using UnityEditor.AddressableAssets.Settings.GroupSchemas;
     using USP.MetaAddressables;
 
-    public class PrioritizedGroupSelector : 
-        MappedGroupSelector<HashSet<MetaAddressables.GroupData>, int>
+    public class PrioritizedGroupExtractor : 
+        MappedGroupExtractor<HashSet<MetaAddressables.GroupData>, int>
     {
         #region Methods
-        public PrioritizedGroupSelector()
+        public PrioritizedGroupExtractor()
         {
             // Uses a sorted dictionary to propritize the group templates.
             GroupTemplateByKey = new SortedDictionary<int, AddressableAssetGroupTemplate>();

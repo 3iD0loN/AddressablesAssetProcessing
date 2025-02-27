@@ -4,14 +4,14 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public class ConstantGroupSelector : IGroupExtractor<string>
+    public class ConstantGroupExtractor : IGroupExtractor<string>
     {
         #region Properties
         public AddressableAssetGroupTemplate GroupTemplate { get; set; }
         #endregion
 
         #region Methods
-        public ConstantGroupSelector(AddressableAssetGroupTemplate groupTemplate)
+        public ConstantGroupExtractor(AddressableAssetGroupTemplate groupTemplate)
         {
             GroupTemplate = groupTemplate;
         }
