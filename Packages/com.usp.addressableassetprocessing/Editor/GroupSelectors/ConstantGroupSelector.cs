@@ -16,9 +16,9 @@ namespace USP.AddressablesAssetProcessing
             GroupTemplate = groupTemplate;
         }
 
-        public void Select(string assetFileName)
+        public AddressableAssetGroupTemplate Select(string assetFileName)
         {
-            MetaAddressables.factory.ActiveGroupTemplate = GroupTemplate;
+            return GroupTemplate;
         }
         #endregion
     }
