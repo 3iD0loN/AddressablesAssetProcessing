@@ -6,7 +6,7 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public static class MetaAddressablesProcessing
+    public static class AddressableAssetProcesing
     {
         public static void SetAddressableAsset(string assetFilePath, AddressableAssetGroupTemplate group, string address, HashSet<string> labels)
         {

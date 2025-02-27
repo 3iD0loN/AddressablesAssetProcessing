@@ -11,13 +11,14 @@ namespace USP.AddressablesAssetProcessing
         public static void ProcessAssets(IEnumerable<string> assetFilePaths,
             IExtractor<string, AddressableAssetGroupTemplate> groupExtractor,
             IExtractor<string, string> addressExtractor,
-            IExtractor<string, HashSet<string>> labelExtractor)
+            IExtractor<string, HashSet<string>> labelExtractor,
+            IAssetApplicator assetApplicator)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
 
             foreach (string assetFilePath in assetFilePaths)
             {
-                ProcessAsset(settings, assetFilePath, groupExtractor, addressExtractor, labelExtractor);
+                ProcessAsset(settings, assetFilePath, groupExtractor, addressExtractor, labelExtractor, assetApplicator);
             }
         }
 
@@ -25,7 +26,8 @@ namespace USP.AddressablesAssetProcessing
             string assetFilePath,
             IExtractor<string, AddressableAssetGroupTemplate> groupExtractor,
             IExtractor<string, string> addressExtractor,
-            IExtractor<string, HashSet<string>> labelExtractor)
+            IExtractor<string, HashSet<string>> labelExtractor,
+            IAssetApplicator assetApplicator)
         {
             // Select the asset file path to the group selector to set the appropriate group template.
             AddressableAssetGroupTemplate group = null;
@@ -38,9 +40,7 @@ namespace USP.AddressablesAssetProcessing
             var labels = new HashSet<string>();
             labelExtractor.Extract(assetFilePath, ref labels);
 
-            MetaAddressablesProcessing.SetAddressableAsset(assetFilePath, group, address, labels);
-
-            MetaAddressablesProcessing.SetGlobalLabels(settings, labels);
+            assetApplicator.Apply(settings, assetFilePath, group, address, labels);
         }
         #endregion
     }

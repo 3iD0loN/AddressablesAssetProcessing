@@ -1,15 +1,16 @@
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using System.Collections.Generic;
 using System.Linq;
 
 using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
-using USP.AddressablesAssetProcessing;
 using USP.AddressablesBuildGraph;
-using USP.MetaAddressables;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using USP.MetaAddressables;
+
     public class AddressablesDeduplicator
     {
         #region Types
@@ -66,8 +67,28 @@ namespace USP.AddressablesAssetProcessing
             #endregion
         }
 
+        private class AddressExtractor : IExtractor<AssetInfo, string>
+        {
+            #region Fields
+            private IExtractor<string, string> _groupExtractor;
+            #endregion
+
+            #region Methods
+            public AddressExtractor(IExtractor<string, string> groupExtractor)
+            {
+                _groupExtractor = groupExtractor;
+            }
+
+            public void Extract(AssetInfo asset, ref string result)
+            {
+                _groupExtractor.Extract(asset.FilePath, ref result);
+            }
+            #endregion
+        }
+
         private class KeyExtractor : IExtractor<AssetInfo, HashSet<string>>
         {
+            #region Methods
             public void Extract(AssetInfo asset, ref HashSet<string> result)
             {
                 result.Add("Shared Resources");
@@ -76,18 +97,20 @@ namespace USP.AddressablesAssetProcessing
                     result.UnionWith(dependentAsset.Labels);
                 }
             }
+            #endregion
         }
         #endregion
 
         #region Static Methods
         public static void ProcessAssets(
             IExtractor<HashSet<MetaAddressables.GroupData>, AddressableAssetGroupTemplate> groupDataExtractor,
-            IExtractor<string, string> addressExtractor)
+            IExtractor<string, string> addressFilepathExtractor,
+            IAssetApplicator assetApplicator)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
 
             var groupExtractor = new GroupExtractor(groupDataExtractor);
-
+            var addressExtractor = new AddressExtractor(addressFilepathExtractor);
             var labelExtractor = new KeyExtractor();
 
             const int MaxIterations = 10;
@@ -117,7 +140,7 @@ namespace USP.AddressablesAssetProcessing
                         return;
                     }
 
-                    ProcessAsset(settings, duplicatedImplicitRoot, groupExtractor, addressExtractor, labelExtractor);
+                    ProcessAsset(settings, duplicatedImplicitRoot, groupExtractor, addressExtractor, labelExtractor, assetApplicator);
                 }
             }
         }
@@ -128,25 +151,24 @@ namespace USP.AddressablesAssetProcessing
         }
 
         private static void ProcessAsset(AddressableAssetSettings settings,
-            AssetInfo duplicatedImplicitRoot,
+            AssetInfo asset,
             IExtractor<AssetInfo, AddressableAssetGroupTemplate> groupExtractor,
-            IExtractor<string, string> addressExtractor,
-            IExtractor<AssetInfo, HashSet<string>> labelExtractor)
+            IExtractor<AssetInfo, string> addressExtractor,
+            IExtractor<AssetInfo, HashSet<string>> labelExtractor,
+            IAssetApplicator assetApplicator)
         {
-            // Apply the asset file path to the group selector to set the appropriate group template.
+            // Extract the group template from the asset.
             AddressableAssetGroupTemplate group = null;
-            groupExtractor.Extract(duplicatedImplicitRoot, ref group);
+            groupExtractor.Extract(asset, ref group);
 
             string address = null;
-            addressExtractor.Extract(duplicatedImplicitRoot.FilePath, ref address);
+            addressExtractor.Extract(asset, ref address);
 
-            // Extract labels from the folder path.
+            // Extract labels from the asset.
             var labels = new HashSet<string>();
-            labelExtractor.Extract(duplicatedImplicitRoot, ref labels);
+            labelExtractor.Extract(asset, ref labels);
 
-            MetaAddressablesProcessing.SetAddressableAsset(duplicatedImplicitRoot.FilePath, group, address, labels);
-
-            MetaAddressablesProcessing.SetGlobalLabels(settings, labels);
+            assetApplicator.Apply(settings, asset.FilePath, group, address, labels);
         }
         #endregion
     }

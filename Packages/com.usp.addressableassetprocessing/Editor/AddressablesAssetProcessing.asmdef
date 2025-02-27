@@ -17,6 +17,12 @@
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.usp.metaaddressables",
+            "expression": "[0.0.1,0.0.1)",
+            "define": "ENABLE_METAADDRESSABLES"
+        }
+    ],
     "noEngineReferences": false
 }
