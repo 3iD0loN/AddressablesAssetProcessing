@@ -2,10 +2,7 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
-    public interface IGroupSelector<T>
+    public interface IGroupSelector<T> : IKeyExtractor<T, AddressableAssetGroupTemplate>
     {
-        #region Methods
-        AddressableAssetGroupTemplate Select(T key);
-        #endregion
     }
 }

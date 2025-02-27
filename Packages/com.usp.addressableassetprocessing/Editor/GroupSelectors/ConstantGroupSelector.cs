@@ -16,9 +16,9 @@ namespace USP.AddressablesAssetProcessing
             GroupTemplate = groupTemplate;
         }
 
-        public AddressableAssetGroupTemplate Select(string assetFileName)
+        public void Extract(string assetFileName, ref AddressableAssetGroupTemplate value)
         {
-            return GroupTemplate;
+            value = GroupTemplate;
         }
         #endregion
     }

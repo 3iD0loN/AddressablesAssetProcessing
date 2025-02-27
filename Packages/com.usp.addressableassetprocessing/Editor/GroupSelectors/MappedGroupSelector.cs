@@ -22,12 +22,12 @@ namespace USP.AddressablesAssetProcessing
             GroupTemplateByKey = new Dictionary<O, AddressableAssetGroupTemplate>();
         }
 
-        public AddressableAssetGroupTemplate Select(I inputKey)
+        public void Extract(I inputKey, ref AddressableAssetGroupTemplate value)
         {
             O internalKey = GetInternalKey(inputKey);
 
             // Get template associated with the key.
-            return Get(internalKey);
+            value = Get(internalKey);
         }
 
         protected abstract O GetInternalKey(I groups);
