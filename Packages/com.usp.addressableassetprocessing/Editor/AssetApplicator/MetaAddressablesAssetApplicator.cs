@@ -4,6 +4,7 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+#if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
 
     public class MetaAddressablesAssetApplicator : IAssetApplicator
@@ -52,4 +53,5 @@ namespace USP.AddressablesAssetProcessing
         }
         #endregion
     }
+#endif
 }
