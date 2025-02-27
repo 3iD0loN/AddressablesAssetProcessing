@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -8,7 +7,6 @@ using UnityEditor.AddressableAssets.Settings;
 using USP.AddressablesAssetProcessing;
 using USP.AddressablesBuildGraph;
 using USP.MetaAddressables;
-using static UnityEditor.AddressableAssets.Build.Layout.BuildLayout.Bundle.BundleDependency;
 
 public class AddressablesDeduplicator
 {
@@ -73,7 +71,6 @@ public class AddressablesDeduplicator
 
         MetaAddressablesProcessing.SetAddressableAsset(duplicatedImplicitRoot.FilePath, group, address, labels);
 
-        var settings = AddressableAssetSettingsDefaultObject.Settings;
         MetaAddressablesProcessing.SetGlobalLabels(settings, labels);
     }
 
