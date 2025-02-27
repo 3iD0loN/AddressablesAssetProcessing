@@ -7,6 +7,6 @@ namespace USP.AddressablesAssetProcessing
         /// </summary>
         /// <param name="value">The value to extract from.</param>
         /// <param name="result">The resulting keys.</param>
-        void Extract(I value, O result);
+        void Extract(I value, ref O result);
     }
 }

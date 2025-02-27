@@ -1,11 +1,10 @@
-using System;
 using System.Collections.Generic;
 
 using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
-    using UnityEditor.AddressableAssets.Settings;
     using USP.MetaAddressables;
 
     public static class AddressablesProcessing
@@ -37,7 +36,7 @@ namespace USP.AddressablesAssetProcessing
 
             // Extract labels from the folder path.
             var extractedLabels = new HashSet<string>();
-            labelExtractor.Extract(assetFilePath, extractedLabels);
+            labelExtractor.Extract(assetFilePath, ref extractedLabels);
 
             MetaAddressablesProcessing.SetAddressableAsset(assetFilePath, group, address, extractedLabels);
 

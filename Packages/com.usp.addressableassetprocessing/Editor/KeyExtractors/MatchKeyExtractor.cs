@@ -44,7 +44,7 @@ namespace USP.AddressablesAssetProcessing
             if (!Check(match))
             {
                 // Add  original value as-is.
-                Add(original, transform, splitter, ignored, result);
+                MatchKeyExtractor.Add(original, transform, splitter, ignored, result);
 
                 // Do nothing else.
                 return;
@@ -54,7 +54,7 @@ namespace USP.AddressablesAssetProcessing
 
             do
             {
-                Add(match.Value, transform, splitter, ignored, result);
+                MatchKeyExtractor.Add(match.Value, transform, splitter, ignored, result);
 
                 // Move onto the next item in the matches.
                 match = match.NextMatch();
@@ -117,11 +117,6 @@ namespace USP.AddressablesAssetProcessing
 
             // Otherwise, the value should not be ignored.
 
-            if (string.Compare("Msg", value, System.StringComparison.Ordinal) == 0)
-            {
-                UnityEngine.Debug.Break();
-            }
-
             result.Add(value);
         }
         #endregion
@@ -155,7 +150,7 @@ namespace USP.AddressablesAssetProcessing
         /// </summary>
         /// <param name="assetFileName">The asset file name to extract from.</param>
         /// <param name="result">The container that is populated by keys.</param>
-        public void Extract(string assetFileName, HashSet<string> result)
+        public void Extract(string assetFileName, ref HashSet<string> result)
         {
             if (string.IsNullOrEmpty(MatchPattern))
             {

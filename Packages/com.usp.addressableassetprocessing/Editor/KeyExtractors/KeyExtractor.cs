@@ -114,7 +114,7 @@ namespace USP.AddressablesAssetProcessing
             MatchKeyExtractor[] matchKeyExtractors,
             Dictionary<string, List<string>> transform,
             HashSet<string> ignored,
-            HashSet<string> result)
+            ref HashSet<string> result)
         {
             // If there is no valid directories in the path, then:
             if (directories == null)
@@ -128,7 +128,7 @@ namespace USP.AddressablesAssetProcessing
             // For every directory in the path, perform the following:
             foreach (string directory in directories)
             {
-                KeyExtract(directory, matchKeyExtractors, transform, ignored, result);
+                KeyExtract(directory, matchKeyExtractors, transform, ignored, ref result);
             }
         }
 
@@ -136,7 +136,7 @@ namespace USP.AddressablesAssetProcessing
             MatchKeyExtractor[] matchKeyExtractors,
             Dictionary<string, List<string>> transform,
             HashSet<string> ignored,
-            HashSet<string> result)
+            ref HashSet<string> result)
         {
             // If the match key extractors are null or empty, then:
             if (matchKeyExtractors == null || matchKeyExtractors.Length == 0)
@@ -168,7 +168,7 @@ namespace USP.AddressablesAssetProcessing
                 }
 
                 // Extract the keys out of the value
-                matchKeyExtractor.Extract(value, result);
+                matchKeyExtractor.Extract(value, ref result);
             }
         }
         #endregion
@@ -234,7 +234,7 @@ namespace USP.AddressablesAssetProcessing
         /// </summary>
         /// <param name="assetFileName">The asset file name to extract from.</param>
         /// <param name="result">The container that is populated by keys.</param>
-        public void Extract(string assetFilePath, HashSet<string> result)
+        public void Extract(string assetFilePath, ref HashSet<string> result)
         {
             // If there is no valid separator, then:
             if (Separator == null)
@@ -252,7 +252,7 @@ namespace USP.AddressablesAssetProcessing
             // from the split path to get just the directories.
             IEnumerable<string> directories = splitAssetFilePath.SkipLast(1);
 
-            KeyExtract(directories, DirectoryKeyExtractors, Transform, Ignored, result);
+            KeyExtract(directories, DirectoryKeyExtractors, Transform, Ignored, ref result);
 
             // Get the last item in the array, which is the asset file name.
             int lastIndex = splitAssetFilePath.Length - 1;
@@ -261,7 +261,7 @@ namespace USP.AddressablesAssetProcessing
             // Remove the file extension from the asset file name.
             string assetFileName = Path.GetFileNameWithoutExtension(last);
 
-            KeyExtract(assetFileName, FilenameKeyExtractors, Transform, Ignored, result);
+            KeyExtract(assetFileName, FilenameKeyExtractors, Transform, Ignored, ref result);
 
             // Add the constant keys to the result.
             result.UnionWith(Added);
