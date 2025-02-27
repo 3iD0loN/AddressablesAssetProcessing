@@ -5,9 +5,6 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
-    using DocumentFormat.OpenXml.Spreadsheet;
-    using USP.MetaAddressables;
-
     public static class AddressablesProcessing
     {
         #region Static Methods
