@@ -1,4 +1,3 @@
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -31,14 +30,14 @@ namespace USP.AddressablesAssetProcessing
                 {
                     var groupGuid = bundleInfo.Group.Guid;
 
-                    bool found = AddressablesGroupLookup.GroupsByGuids.TryGetValue(groupGuid, out AddressableAssetGroup group);
+                    bool found = AddressablesLookup.GroupsAndHashesByGuids.TryGetValue(groupGuid, out (int, AddressableAssetGroup Group) value);
 
                     if (!found)
                     {
                         break;
                     }
 
-                    var groupData = new MetaAddressables.GroupData(group);
+                    var groupData = new MetaAddressables.GroupData(value.Group);
 
                     groupSet.Add(groupData);
                 }
@@ -168,7 +167,7 @@ namespace USP.AddressablesAssetProcessing
             var labels = new HashSet<string>();
             labelExtractor.Extract(asset, ref labels);
 
-            assetApplicator.Apply(settings, asset.FilePath, group, address, labels);
+            assetApplicator.ApplyAsset(settings, asset.FilePath, group, address, labels);
         }
         #endregion
     }

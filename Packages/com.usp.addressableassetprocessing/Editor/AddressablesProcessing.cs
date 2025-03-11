@@ -16,6 +16,11 @@ namespace USP.AddressablesAssetProcessing
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
 
+            if (settings == null)
+            {
+                return;
+            }
+
             foreach (string assetFilePath in assetFilePaths)
             {
                 ProcessAsset(settings, assetFilePath, groupExtractor, addressExtractor, labelExtractor, assetApplicator);
@@ -40,7 +45,7 @@ namespace USP.AddressablesAssetProcessing
             var labels = new HashSet<string>();
             labelExtractor.Extract(assetFilePath, ref labels);
 
-            assetApplicator.Apply(settings, assetFilePath, group, address, labels);
+            assetApplicator.ApplyAsset(settings, assetFilePath, group, address, labels);
         }
         #endregion
     }

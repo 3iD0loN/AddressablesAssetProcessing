@@ -5,6 +5,8 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using USP.MetaAddressables;
+
     public class AddressablesAssetApplicator : IAssetApplicator
     {
         #region Static Methods
@@ -26,14 +28,22 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Methods
-        public void Apply(AddressableAssetSettings settings,
+        public void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
-            AddressableAssetGroupTemplate group,
+            AddressableAssetGroupTemplate groupTemplate,
             string address,
             HashSet<string> labels)
         {
+            AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, groupTemplate);
+
+            MetaAddressables.AssetData.CreateOrMove(settings, assetFilePath, group, address, labels);
+
             SetGlobalLabels(settings, labels);
         }
+
+        public void ApplyGlobal(AddressableAssetSettings settings,
+            HashSet<string> labels)
+        { }
         #endregion
     }
 }

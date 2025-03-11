@@ -6,10 +6,13 @@ namespace USP.AddressablesAssetProcessing
 {
     public interface IAssetApplicator
     {
-        public void Apply(AddressableAssetSettings settings,
+        void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
             AddressableAssetGroupTemplate group,
             string address,
+            HashSet<string> labels);
+
+        void ApplyGlobal(AddressableAssetSettings settings, 
             HashSet<string> labels);
     }
 }

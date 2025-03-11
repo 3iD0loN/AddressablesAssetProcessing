@@ -10,13 +10,18 @@ namespace USP.AddressablesAssetProcessing
     public class MetaAddressablesAssetApplicator : IAssetApplicator
     {
         #region Static Methods
-        public static void SetAddressableAsset(string assetFilePath, AddressableAssetGroupTemplate group, string address, HashSet<string> labels)
+        public static void SetAddressableAsset(AddressableAssetSettings settings, string assetFilePath, 
+            AddressableAssetGroupTemplate group, string address, HashSet<string> labels)
         {
-            // MetaAddressables data cration will default to using this group if there is no metadata associated. 
-            MetaAddressables.factory.ActiveGroupTemplate = group;
+            if (MetaAddressables.Factory is MetaAddressables.CreationFactory factory)
+            {
+                // MetaAddressables data creation will default to using this group if there is no metadata associated. 
+                factory.ActiveGroupTemplate = group;
+            }
 
             // Get the user data associated with the asset file path.
-            MetaAddressables.UserData userData = MetaAddressables.Read(assetFilePath);
+            // If there is no entry, then create one using the factory, but don't commit it to file yet.
+            MetaAddressables.UserData userData = MetaAddressables.Read(assetFilePath, MetaAddressables.Factory);
 
             // If there was no valid user data associated with the asset file path, then:
             if (userData == null)
@@ -33,7 +38,7 @@ namespace USP.AddressablesAssetProcessing
 
             // Generate Addressables groups from the Meta file.
             // This is done before saving MetaAddressables to file in case we find groups that already match.
-            MetaAddressables.Generate(userData);
+            MetaAddressables.Generate(ref userData, settings);
 
             // Save to MetaAddressables changes.
             MetaAddressables.Write(assetFilePath, userData);
@@ -41,16 +46,20 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Methods
-        public void Apply(AddressableAssetSettings settings,
+        public void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
             AddressableAssetGroupTemplate group,
             string address,
             HashSet<string> labels)
         {
-            SetAddressableAsset(assetFilePath, group, address, labels);
+            SetAddressableAsset(settings, assetFilePath, group, address, labels);
 
             AddressablesAssetApplicator.SetGlobalLabels(settings, labels);
         }
+
+        public void ApplyGlobal(AddressableAssetSettings settings,
+            HashSet<string> labels)
+        {}
         #endregion
     }
 #endif
