@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <uie:ObjectField label="Local Assets Template" name="local-assets-template" data-source-type="UnityEditor.AddressableAssets.Settings.AddressableAssetGroupTemplate" allow-scene-objects="false" />
+    <uie:ObjectField label="Remote Assets Template" name="remote-assets-template" data-source-type="UnityEditor.AddressableAssets.Settings.AddressableAssetGroupTemplate" allow-scene-objects="false" />        
+</ui:UXML>

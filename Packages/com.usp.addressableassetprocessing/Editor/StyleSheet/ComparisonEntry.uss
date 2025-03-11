@@ -1,0 +1,11 @@
+.centered-label {
+    white-space: pre;
+    -unity-text-align: middle-center;
+}
+
+.comparison-controls {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+}

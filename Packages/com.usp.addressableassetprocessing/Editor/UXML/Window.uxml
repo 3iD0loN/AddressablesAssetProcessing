@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:TwoPaneSplitView fixed-pane-initial-dimension="500">
+        <ui:VisualElement>
+            <ui:VisualElement name="global-settings" />
+            <ui:MultiColumnTreeView name="main-tree-view" show-border="true" reorderable="false" auto-expand="true" show-alternating-row-backgrounds="ContentOnly" selection-type="Single" fixed-item-height="20">
+                <ui:Columns>
+                    <ui:Column name="enabled" title="Enabled" visible="false" stretchable="false" min-width="74px" />
+                    <ui:Column name="path" title="File Processing Rulesets" visible="true" stretchable="true" />
+                </ui:Columns>
+            </ui:MultiColumnTreeView>
+        </ui:VisualElement>
+        <ui:VisualElement name="selected-processing-state" />
+    </ui:TwoPaneSplitView>
+    <ui:Button name="collect-all-button" text="Enumerate All Assets" enabled="true" />
+    <ui:Button name="process-all-button" text="Process All Assets" enabled="false" />
+    <ui:Button name="collect-and-process-all-button" text="Enumerate and Process All Assets" enabled="true" />
+    <ui:Button name="deduplicate-all-button" text="Deduplicate All Implicit Assets" enabled="false" />
+</ui:UXML>
