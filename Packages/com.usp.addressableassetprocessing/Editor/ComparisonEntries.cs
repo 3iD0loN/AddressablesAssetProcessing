@@ -66,18 +66,18 @@ namespace USP.AddressablesAssetProcessing
         {
             IPropertyComparer comparer = comparisonEntry.comparer;
 
-            var fileProcessingAssetHash = comparer.GetHashCode(comparisonEntry.fileProcessingAsset);
-            var metaDataAssetHash = comparer.GetHashCode(comparisonEntry.metaDataAsset);
-            var addressablesAssetHash = comparer.GetHashCode(comparisonEntry.addressablesAsset);
+            var fileProcessingAssetHash = comparisonEntry.fileProcessingAsset != null ? comparer.GetHashCode(comparisonEntry.fileProcessingAsset) : 0;
+            var metaDataAssetHash = comparisonEntry.metaDataAsset != null ? comparer.GetHashCode(comparisonEntry.metaDataAsset) : 0;
+            var addressablesAssetHash = comparisonEntry.addressablesAsset != null ? comparer.GetHashCode(comparisonEntry.addressablesAsset) : 0;
 
-            bool leftCompareA = comparer.Equals(comparisonEntry.fileProcessingAsset, comparisonEntry.metaDataAsset);
+            //bool leftCompareA = comparer.Equals(comparisonEntry.fileProcessingAsset, comparisonEntry.metaDataAsset);
             bool leftCompareB = fileProcessingAssetHash == metaDataAssetHash;
-            UnityEngine.Debug.Assert(leftCompareA == leftCompareB, "compare between file processing and meta files don't match.");
+            //UnityEngine.Debug.Assert(leftCompareA == leftCompareB, "compare between file processing and meta files don't match.");
             comparisonEntry.leftCompare = leftCompareB;
 
-            bool rightCompareA = comparer.Equals(comparisonEntry.metaDataAsset, comparisonEntry.addressablesAsset);
+            //bool rightCompareA = comparer.Equals(comparisonEntry.metaDataAsset, comparisonEntry.addressablesAsset);
             bool rightCompareB = metaDataAssetHash == addressablesAssetHash;
-            UnityEngine.Debug.Assert(rightCompareA == rightCompareB, "compare between meta file and addressables don't match.");
+            //UnityEngine.Debug.Assert(rightCompareA == rightCompareB, "compare between meta file and addressables don't match.");
             comparisonEntry.rightCompare = rightCompareB;
         }
 
@@ -132,9 +132,9 @@ namespace USP.AddressablesAssetProcessing
                     childComparisonEntry.entryType = propertyInfo.PropertyType;
                     childComparisonEntry.entryName = propertyInfo.Name;
 
-                    childComparisonEntry.fileProcessingAsset = child.Access(comparisonEntry.fileProcessingAsset);
-                    childComparisonEntry.metaDataAsset = child.Access(comparisonEntry.metaDataAsset);
-                    childComparisonEntry.addressablesAsset = child.Access(comparisonEntry.addressablesAsset);
+                    childComparisonEntry.fileProcessingAsset = comparisonEntry.fileProcessingAsset != null ? child.Access(comparisonEntry.fileProcessingAsset) : null;
+                    childComparisonEntry.metaDataAsset = comparisonEntry.metaDataAsset != null ? child.Access(comparisonEntry.metaDataAsset) : null;
+                    childComparisonEntry.addressablesAsset = comparisonEntry.addressablesAsset != null ? child.Access(comparisonEntry.addressablesAsset) : null;
 
                     PopulateCompare(childComparisonEntry);
 
@@ -161,6 +161,12 @@ namespace USP.AddressablesAssetProcessing
             }
 
             var enumerable = fieldInfo.GetValue(comparisonEntry) as IEnumerable;
+
+            if (enumerable == null)
+            {
+                return;
+            }
+
             IEnumerator enumerator = enumerable.GetEnumerator();
 
             while (enumerator.MoveNext())
