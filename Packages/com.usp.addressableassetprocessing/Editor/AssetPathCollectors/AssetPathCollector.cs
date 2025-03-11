@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using UnityEditor;
 
 namespace USP.AddressablesAssetProcessing
 {
@@ -53,14 +54,61 @@ namespace USP.AddressablesAssetProcessing
             _recacheIgnore = true;
         }
 
-        public void GetFiles(string parentDirectoryPath, ref List<string> result)
+        public void GetFiles(string parentDirectoryPath, ref IEnumerable<string> result)
+        {
+            IEnumerable<string> files = GetFiles(parentDirectoryPath);
+
+            result = Enumerable.Concat(result, files);
+
+            //result = result != null ? Enumerable.Concat(result, files) : files;
+        }
+
+        /*/
+        public void GetFiles(string parentDirectoryPath, ref IEnumerable<(string, string)> result)
+        {
+            IEnumerable<string> files = GetFiles(parentDirectoryPath);
+
+            IEnumerable<(string, string)> x = files
+                .Where(file => File.Exists(file))
+                .Select((string file) =>
+                {
+                    string guid = AssetDatabase.AssetPathToGUID(file);
+
+                    return (guid, file);
+                });
+
+            result = result != null ? Enumerable.Concat(result, x) : x;
+        }
+        //*/
+
+        public void GetFiles(string parentDirectoryPath, ref Dictionary<string, string> result)
+        {
+            IEnumerable<string> files = GetFiles(parentDirectoryPath);
+
+            foreach (string file in files)
+            {
+                if (!File.Exists(file))
+                {
+                    continue;
+                }
+
+                string guid = AssetDatabase.AssetPathToGUID(file);
+
+                if (string.IsNullOrEmpty(guid))
+                {
+                    continue;
+                }
+
+                result.Add(guid, file);
+            }
+        }
+
+        private IEnumerable<string> GetFiles(string parentDirectoryPath)
         {
             const string AllFilesWithExtensionsPattern = "*.*";
 
-            IEnumerable<string> files = Directory.GetFiles(parentDirectoryPath, AllFilesWithExtensionsPattern, SearchOptions)
+            return Directory.GetFiles(parentDirectoryPath, AllFilesWithExtensionsPattern, SearchOptions)
                 .Where(FilepathMatches);
-
-            result.AddRange(files);
         }
 
         protected virtual string GetMatchPattern() => MatchPattern;
