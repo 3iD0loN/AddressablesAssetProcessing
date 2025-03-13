@@ -193,7 +193,6 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                     collectFolderAssetsButton.clicked += () =>
                     {
                         OnCollectFolderAssets(selectedItem);
-                        OnCompareFolderAssets(selectedItem, entriesByAssetFilepath);
 
                         mainTreeView.SetRootItems(folderItems);
                         mainTreeView.ExpandItem(selectedItem.id, true);
