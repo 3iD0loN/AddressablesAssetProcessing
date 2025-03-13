@@ -242,6 +242,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
                     ComparisonEntryTreeView comparisonEntryView = rootVisualElement.Q<ComparisonEntryTreeView>("comparison-entry");
                     comparisonEntryView.SetRootItems(comparisonEntryItems);
+                    comparisonEntryView.Rebuild();
                     comparisonEntryView.ExpandAll();
                 }
             }

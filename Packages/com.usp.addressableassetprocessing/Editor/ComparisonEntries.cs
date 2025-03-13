@@ -3,242 +3,263 @@ using System.Collections.Generic;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using DocumentFormat.OpenXml.Office2013.PowerPoint;
+    using NUnit.Framework;
     using System.Collections;
+    using System.Linq;
     using System.Linq.Expressions;
     using System.Reflection;
+    using System.Security.Policy;
+    using UnityEditor;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
+    using static PlasticGui.LaunchDiffParameters;
 #endif
+
+    public class CompareOperand
+    {
+        public object value;
+
+        public bool isReadonly;
+
+        public CompareOperand(object value, bool isReadonly = false)
+        {
+            this.value = value;
+            this.isReadonly = isReadonly;
+        }
+    }
+
+    public struct CompareOperation
+    {
+        public IPropertyComparer comparer { get; }
+
+        public CompareOperand leftHand { get; }
+
+        public CompareOperand rightHand { get; }
+
+        public bool result { get; }
+
+        public CompareOperation(IPropertyComparer comparer, CompareOperand leftHand, CompareOperand rightHand)
+        {
+            this.comparer = comparer;
+            this.leftHand = leftHand;
+            this.rightHand = rightHand;
+            result = false;
+            this.result = Operate(this);
+        }
+
+        public static bool Operate(CompareOperation operation)
+        {
+            var leftHash = operation.leftHand.value != null ? operation.comparer.GetHashCode(operation.leftHand.value) : 0;
+            var rightHash = operation.rightHand.value != null ? operation.comparer.GetHashCode(operation.rightHand.value) : 0;
+
+            return leftHash == rightHash;
+        }
+    }
 
     public class ComparisonEntry
     {
-        public IPropertyComparer comparer;
+        public string entryName;
 
         public Type entryType;
 
-        public string entryName;
+        public IPropertyComparer comparer;
+
+        public IReadOnlyDictionary<string, CompareOperand> compareTargets;
+
+        public IReadOnlyDictionary<string, CompareOperation> compareOperations;
+
+        /*/
+        public CompareOperation leftCompare;
 
         public object fileProcessingAsset;
 
-        public bool leftCompare;
+        public CompareOperation leftCompare;
 
         public object metaDataAsset;
 
-        public bool rightCompare;
+        public CompareOperation rightCompare;
 
         public object addressablesAsset;
+        //*/
 
         public IEnumerable<ComparisonEntry> children;
     }
 
     public class ComparisonEntries
     {
+        private const string ProcessingDataKey = "processing-data";
+
+        private const string MetafileDataKey = "metafile-data";
+
+        private const string AddressablesDataKey = "addressables-data";
+
         private static UserDataComparer userDataComparer = new UserDataComparer();
 
         public static ComparisonEntry CreateEntry(CombinedAssetApplicator combinedAssetApplicator, string assetFilePath)
         {
+            var properties = new Dictionary<string, CompareOperand>(3);
+            
+            combinedAssetApplicator.SimulatedAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData processingData);
+            properties[ProcessingDataKey] = new CompareOperand(processingData, true);
+
+            combinedAssetApplicator.MetaAddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData metafileData);
+            properties[MetafileDataKey] = new CompareOperand(metafileData, false);
+
+            combinedAssetApplicator.AddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData addressablesData);
+            properties[AddressablesDataKey] = new CompareOperand(addressablesData, false);
+
             var result = new ComparisonEntry();
             result.comparer = userDataComparer;
             result.entryType = typeof(MetaAddressables.UserData);
             result.entryName = assetFilePath;
-
-            if (combinedAssetApplicator.SimulatedAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData fileProcessingAsset))
-            {
-                result.fileProcessingAsset = fileProcessingAsset;
-            }
-            if (combinedAssetApplicator.MetaAddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData metaDataAsset))
-            {
-                result.metaDataAsset = metaDataAsset;
-            }
-            if (combinedAssetApplicator.AddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData addressablesAsset))
-            {
-                result.addressablesAsset = addressablesAsset;
-            }
-
-            PopulateCompare(result);
-
-            PopulateChildren(result);
+            result.compareTargets = properties;
+            result.compareOperations = PopulateCompare(result.comparer, result.compareTargets);
+            result.children = PopulateChildren(result.entryType, result.comparer, result.compareTargets);
 
             return result;
         }
 
-        private static void PopulateCompare(ComparisonEntry comparisonEntry)
+        private static IReadOnlyDictionary<string, CompareOperation> PopulateCompare(
+            IPropertyComparer comparer, IReadOnlyDictionary<string, CompareOperand> compareTargets)
         {
-            IPropertyComparer comparer = comparisonEntry.comparer;
+            var processingData = compareTargets[ProcessingDataKey];
+            var metafileData = compareTargets[MetafileDataKey];
+            var addressablesData = compareTargets[AddressablesDataKey];
 
-            var fileProcessingAssetHash = comparisonEntry.fileProcessingAsset != null ? comparer.GetHashCode(comparisonEntry.fileProcessingAsset) : 0;
-            var metaDataAssetHash = comparisonEntry.metaDataAsset != null ? comparer.GetHashCode(comparisonEntry.metaDataAsset) : 0;
-            var addressablesAssetHash = comparisonEntry.addressablesAsset != null ? comparer.GetHashCode(comparisonEntry.addressablesAsset) : 0;
+            var result = new Dictionary<string, CompareOperation>(2);
+            result["processing-metafile-compare"] = new CompareOperation(comparer, processingData, metafileData);
+            result["metafile-addressables-compare"] = new CompareOperation(comparer, metafileData, addressablesData);
 
-            //bool leftCompareA = comparer.Equals(comparisonEntry.fileProcessingAsset, comparisonEntry.metaDataAsset);
-            bool leftCompareB = fileProcessingAssetHash == metaDataAssetHash;
-            //UnityEngine.Debug.Assert(leftCompareA == leftCompareB, "compare between file processing and meta files don't match.");
-            comparisonEntry.leftCompare = leftCompareB;
-
-            //bool rightCompareA = comparer.Equals(comparisonEntry.metaDataAsset, comparisonEntry.addressablesAsset);
-            bool rightCompareB = metaDataAssetHash == addressablesAssetHash;
-            //UnityEngine.Debug.Assert(rightCompareA == rightCompareB, "compare between meta file and addressables don't match.");
-            comparisonEntry.rightCompare = rightCompareB;
+            return result;
         }
 
-        private static void PopulateChildren(ComparisonEntry comparisonEntry)
+        private static IEnumerable<ComparisonEntry> PopulateChildren(
+            Type type, IPropertyComparer comparer,
+            IReadOnlyDictionary<string, CompareOperand> compareTargets)
         {
-            if (comparisonEntry.comparer.Children == null)
+            var comparerChildren = comparer.Children;
+
+            if (comparerChildren == null)
             {
-                if (comparisonEntry.comparer is GroupSchemaDataComparer groupSchemaDataComparer)
+                if (comparer is GroupSchemaDataComparer abstractComparer)
                 {
-                    var type = comparisonEntry.fileProcessingAsset.GetType();
-                    var comparer = GroupSchemaDataComparer.GetComparer(type);
-
-                    var oldComparer = comparisonEntry.comparer;
-                    comparisonEntry.comparer = comparer;
-
-                    PopulateChildren(comparisonEntry);
-                    return;
+                    comparer = GroupSchemaDataComparer.GetComparer(type);
+                    comparerChildren = comparer.Children;
                 }
-
-                if (comparisonEntry.comparer is EnumerableComparer enumerableComparer)
+                else if (comparer is EnumerableComparer enumerableComparer)
                 {
-                    var entriesByHash = new Dictionary<int, ComparisonEntry>();
+                    // Get the comparer for the elements in the container.
+                    // It is now the comparer for the children, which will be the elements in the container.
+                    comparer = enumerableComparer.ItemComparer;
 
-                    AddEnumerableElements(comparisonEntry, enumerableComparer, x => x.fileProcessingAsset, entriesByHash);
-                    AddEnumerableElements(comparisonEntry, enumerableComparer, x => x.metaDataAsset, entriesByHash);
-                    AddEnumerableElements(comparisonEntry, enumerableComparer, x => x.addressablesAsset, entriesByHash);
+                    var propertyComparerByHash = new Dictionary<object, PropertyComparerPair>();
 
-                    int i = 0;
-                    foreach (var pair in entriesByHash)
+                    var x = new HashSet<object[]>(new EnumerableComparer(ObjectComparer.Default));
+
+                    // For every object that will be compared, perform the following:
+                    foreach ((string key, CompareOperand operand) in compareTargets)
                     {
-                        var elementComparisonEntry = pair.Value;
-                        elementComparisonEntry.entryName = $"Element {i}";
+                        // The comparer is an enumerable comparer, so we assume that the values in the operands are enumerable.
+                        var enumerable = operand.value as IEnumerable;
 
-                        PopulateCompare(elementComparisonEntry);
-                        PopulateChildren(elementComparisonEntry);
-                        ++i;
+                        if (enumerable == null)
+                        {
+                            continue;
+                        }
+
+                        IEnumerator enumerator = enumerable.GetEnumerator();
+
+                        // For every element in the container, perform the following:
+                        while (enumerator.MoveNext())
+                        {
+                            object value = enumerator.Current;
+
+                            x.Add(Get(value, enumerable));
+
+                            bool found = propertyComparerByHash.TryGetValue(value, out PropertyComparerPair pair);
+
+                            if (!found)
+                            {
+                                Expression<Func<IEnumerable, object>> z = (IEnumerable y) => GetValueOrDefault(x, value, enumerable); 
+                                pair = new PropertyComparerPair(z, comparer);
+                                 
+                                propertyComparerByHash.Add(value, pair);
+                            }
+                        }
                     }
 
-                    comparisonEntry.children = entriesByHash.Values;
+                    comparerChildren = propertyComparerByHash.Values;
                 }
-            }
-            else
-            {
-                var children = new List<ComparisonEntry>();
-                foreach (PropertyComparerPair child in comparisonEntry.comparer.Children)
+                else
                 {
-                    var propertyInfo = child.GetMemberInfo<PropertyInfo>();
-
-                    var childComparisonEntry = new ComparisonEntry();
-
-                    childComparisonEntry.comparer = child.PropertyComparer;
-                    childComparisonEntry.entryType = propertyInfo.PropertyType;
-                    childComparisonEntry.entryName = propertyInfo.Name;
-
-                    childComparisonEntry.fileProcessingAsset = comparisonEntry.fileProcessingAsset != null ? child.Access(comparisonEntry.fileProcessingAsset) : null;
-                    childComparisonEntry.metaDataAsset = comparisonEntry.metaDataAsset != null ? child.Access(comparisonEntry.metaDataAsset) : null;
-                    childComparisonEntry.addressablesAsset = comparisonEntry.addressablesAsset != null ? child.Access(comparisonEntry.addressablesAsset) : null;
-
-                    PopulateCompare(childComparisonEntry);
-
-                    PopulateChildren(childComparisonEntry);
-
-                    children.Add(childComparisonEntry);
+                    return null;
                 }
-
-                comparisonEntry.children = children;
-            }
-        }
-
-        private static void AddEnumerableElements(ComparisonEntry comparisonEntry, EnumerableComparer enumerableComparer,
-            Expression<Func<ComparisonEntry, object>> accessor, Dictionary<int, ComparisonEntry> entriesByHash)
-        {
-            if (accessor.Body is not MemberExpression memberExpression)
-            {
-                throw new InvalidCastException();
             }
 
-            if (memberExpression.Member is not FieldInfo fieldInfo)
+            var children = new List<ComparisonEntry>();
+            int i = 0;
+            foreach (PropertyComparerPair comparerChild in comparerChildren)
             {
-                throw new InvalidCastException();
-            }
-
-            var enumerable = fieldInfo.GetValue(comparisonEntry) as IEnumerable;
-
-            if (enumerable == null)
-            {
-                return;
-            }
-
-            IEnumerator enumerator = enumerable.GetEnumerator();
-
-            while (enumerator.MoveNext())
-            {
-                int hash = GetHashCode(enumerator.Current);
-
-                if (!entriesByHash.TryGetValue(hash, out ComparisonEntry childComparisonEntry))
+                var properties = new Dictionary<string, CompareOperand>(compareTargets.Count);
+                foreach ((string key, CompareOperand parentOperand) in compareTargets)
                 {
-                    childComparisonEntry = new ComparisonEntry();
+                    if (parentOperand == null)
+                    {
+                        continue;
+                    }
 
-                    childComparisonEntry.comparer = enumerableComparer.ItemComparer;
-                    childComparisonEntry.entryType = enumerator.Current.GetType();
+                    object childValue = (parentOperand.value != null) ? comparerChild.Access(parentOperand.value) : null;
 
-                    entriesByHash.Add(hash, childComparisonEntry);
+                    var operand = new CompareOperand(childValue, parentOperand.isReadonly);
+                    properties.Add(key, operand);
                 }
 
-                fieldInfo.SetValue(childComparisonEntry, enumerator.Current);
+                // The first item should exist along with at least one other to compare against.
+                // It should be available to compare against all other items, which are alike enough to compare.
+                // Therefore, there is at least one and it would be reasonable have the same type.
+                CompareOperand firstOperand = properties.First().Value;
+                object firstValue = firstOperand.value;
+
+                var propertyInfo = comparerChild.GetMemberInfo<PropertyInfo>();
+                var methodInfo = comparerChild.GetMethodInfo();
+
+                // If the first value is valid, then use the concrete type, since a property, field, or method
+                // can obscure the type of an inherited item. Otherwise, fallback to using the property type.  
+                Type childType = (firstValue != null) ? firstValue.GetType() : (methodInfo != null) ? methodInfo.ReturnType : default;
+
+                var childEntry = new ComparisonEntry();
+                childEntry.entryName = propertyInfo != null ? propertyInfo.Name : $"Element {i}";
+                childEntry.entryType = childType;
+                childEntry.comparer = comparerChild.PropertyComparer;
+                childEntry.compareTargets = properties;
+                childEntry.compareOperations = PopulateCompare(childEntry.comparer, childEntry.compareTargets);
+                childEntry.children = PopulateChildren(childEntry.entryType, childEntry.comparer, childEntry.compareTargets);
+
+                children.Add(childEntry);
+                i++;
             }
+
+            return children;
         }
 
-        private static int GetHashCode(object value)
+        private static object[] Get(object value, IEnumerable enumerable)
         {
-            if (value is KeyValuePair<Type, MetaAddressables.GroupSchemaData> pair)
-            {
-                return pair.Key.GetHashCode();
-            }
-
-            return value.GetHashCode();
+            return new object[] { value, enumerable };
         }
 
-        /*/
-        Dictionary<string, int> leftCompare = new Dictionary<string, int>();
-
-        Dictionary<string, int> rightCompare = new Dictionary<string, int>();
-
-        public void GetAssets()
+        private static object GetValueOrDefault(ISet<object[]> x, object value, IEnumerable enumerable)
         {
-            var userDataComparer = new UserDataComparer();
-            foreach ((string assetPath, MetaAddressables.UserData userData) in simulatedAssetStore.DataByAssetPath)
-            {
-                int hash = userDataComparer.GetHashCode(userData);
-
-                AddCompare(leftCompare, assetPath, hash);
-            }
-
-            foreach ((string assetPath, MetaAddressables.UserData userData) in metaAddressablesAssetStore.DataByAssetPath)
-            {
-                int hash = userDataComparer.GetHashCode(userData);
-
-                AddCompare(leftCompare, assetPath, hash);
-                AddCompare(rightCompare, assetPath, hash);
-            }
-
-            foreach ((string assetPath, MetaAddressables.UserData userData) in addressablesAssetStore.DataByAssetPath)
-            {
-                int hash = userDataComparer.GetHashCode(userData);
-
-                AddCompare(rightCompare, assetPath, hash);
-            }
+            return x.Contains(Get(value, enumerable)) ? value : null;
         }
 
-        private static void AddCompare(Dictionary<string, int> compare, string assetPath, int hash)
+        private static object GetValueOrDefault(IReadOnlyDictionary<object[], object> x, object value, IEnumerable enumerable)
         {
-            if (!compare.TryGetValue(assetPath, out int value))
-            {
-                compare.Add(assetPath, hash);
-            }
-            else
-            {
-                compare[assetPath] = value & ~hash;
-            }
+            var key = Get(value, enumerable);
+
+            x.TryGetValue(key, out object v);
+
+            return v;
         }
-        //*/
     }
 }
