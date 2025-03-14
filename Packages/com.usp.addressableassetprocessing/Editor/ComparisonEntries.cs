@@ -69,20 +69,6 @@ namespace USP.AddressablesAssetProcessing
 
         public IReadOnlyDictionary<string, CompareOperation> compareOperations;
 
-        /*/
-        public CompareOperation leftCompare;
-
-        public object fileProcessingAsset;
-
-        public CompareOperation leftCompare;
-
-        public object metaDataAsset;
-
-        public CompareOperation rightCompare;
-
-        public object addressablesAsset;
-        //*/
-
         public IEnumerable<ComparisonEntry> children;
     }
 
