@@ -188,7 +188,9 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                     var collectAndProcessFolderAssetsButton = selectedState.Q<Button>("collect-and-process-folder-button");
                     var processFolderButton = selectedState.Q<Button>("process-folder-button");
 
-                    collectFolderAssetsButton.SetEnabled(folderState.assetStates.Count != 0);
+                    collectFolderAssetsButton.SetEnabled(folderState.assetStates.Count == 0);
+                    collectAndProcessFolderAssetsButton.SetEnabled(folderState.assetApplicator.AssetStore.DataByAssetPath.Count == 0);
+                    processFolderButton.SetEnabled(folderState.assetStates.Count != 0 && folderState.assetApplicator.AssetStore.DataByAssetPath.Count == 0);
 
                     collectFolderAssetsButton.clicked += () =>
                     {
@@ -311,7 +313,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         var result = new AddressablesAssetStore();
 
-        result.CreateGlobalLabels(settings);
+        result.AddGlobalLabels(settings);
 
         foreach (AddressableAssetGroup group in settings.groups)
         {

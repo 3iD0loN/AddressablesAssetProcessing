@@ -56,9 +56,9 @@ namespace USP.AddressablesAssetProcessing
             dataByAssetPath.Add(entry.AssetPath, userData);
         }
 
-        public void CreateGlobalLabels(AddressableAssetSettings settings)
+        public void AddGlobalLabels(AddressableAssetSettings settings)
         {
-            AddGlobalLabels(settings.GetLabels());
+            base.AddGlobalLabels(settings.GetLabels());
         }
         #endregion
     }
