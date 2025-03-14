@@ -27,6 +27,14 @@ namespace USP.AddressablesAssetProcessing
         }
         #endregion
 
+        #region Fields
+        private AddressablesAssetStore assetStore = new AddressablesAssetStore();
+        #endregion
+
+        #region Properties
+        public IAssetStore AssetStore => assetStore;
+        #endregion
+
         #region Methods
         public void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
@@ -35,10 +43,11 @@ namespace USP.AddressablesAssetProcessing
             HashSet<string> labels)
         {
             AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, groupTemplate);
-
-            MetaAddressables.AssetData.CreateOrMove(settings, assetFilePath, group, address, labels);
+            AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, assetFilePath, group, address, labels);
+            assetStore.AddAsset(entry);
 
             SetGlobalLabels(settings, labels);
+            assetStore.AddGlobalLabels(labels);
         }
         #endregion
     }

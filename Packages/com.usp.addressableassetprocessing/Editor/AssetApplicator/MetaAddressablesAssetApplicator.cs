@@ -10,7 +10,7 @@ namespace USP.AddressablesAssetProcessing
     public class MetaAddressablesAssetApplicator : IAssetApplicator
     {
         #region Static Methods
-        public static void SetAddressableAsset(AddressableAssetSettings settings, string assetFilePath, 
+        public static MetaAddressables.UserData SetAddressableAsset(AddressableAssetSettings settings, string assetFilePath, 
             AddressableAssetGroupTemplate group, string address, HashSet<string> labels)
         {
             if (MetaAddressables.Factory is MetaAddressables.CreationFactory factory)
@@ -26,8 +26,8 @@ namespace USP.AddressablesAssetProcessing
             // If there was no valid user data associated with the asset file path, then:
             if (userData == null)
             {
-                // Do nothing else.
-                return;
+                // Return invalid data. Do nothing else.
+                return null;
             }
 
             // Union the labels that were extracted with the current ones associated with the asset.
@@ -37,12 +37,23 @@ namespace USP.AddressablesAssetProcessing
             userData.Asset.Address = address;
 
             // Generate Addressables groups from the Meta file.
-            // This is done before saving MetaAddressables to file in case we find groups that already match.
+            // This is done before saving MetaAddressables to file in case we find groups that already match,
+            // which will correct the Group member to the better match.
             MetaAddressables.Generate(ref userData, settings);
 
             // Save to MetaAddressables changes.
             MetaAddressables.Write(assetFilePath, userData);
+
+            return userData;
         }
+        #endregion
+
+        #region Fields
+        private MetaAddressablesAssetStore assetStore = new MetaAddressablesAssetStore();
+        #endregion
+
+        #region Properties
+        public IAssetStore AssetStore => assetStore;
         #endregion
 
         #region Methods
@@ -52,9 +63,11 @@ namespace USP.AddressablesAssetProcessing
             string address,
             HashSet<string> labels)
         {
-            SetAddressableAsset(settings, assetFilePath, group, address, labels);
+            var userData = SetAddressableAsset(settings, assetFilePath, group, address, labels);
+            assetStore.AddAsset(userData);
 
             AddressablesAssetApplicator.SetGlobalLabels(settings, labels);
+            assetStore.AddGlobalLabels(labels);
         }
         #endregion
     }

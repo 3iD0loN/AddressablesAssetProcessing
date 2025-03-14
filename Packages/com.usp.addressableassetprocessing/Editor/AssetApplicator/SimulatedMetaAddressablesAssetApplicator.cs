@@ -10,6 +10,10 @@ namespace USP.AddressablesAssetProcessing
         public SimulatedAssetStore SimulatedAssetStore { get; } = new SimulatedAssetStore();
         #endregion
 
+        #region Properties
+        public IAssetStore AssetStore => SimulatedAssetStore;
+        #endregion
+
         #region Methods
         public virtual void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,

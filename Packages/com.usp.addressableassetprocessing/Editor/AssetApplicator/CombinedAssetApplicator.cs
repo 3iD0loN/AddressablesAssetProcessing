@@ -1,8 +1,4 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Reflection;
 
 using UnityEditor.AddressableAssets.Settings;
 
@@ -45,12 +41,7 @@ namespace USP.AddressablesAssetProcessing
 #endif
 
             AddressablesAssetStore.AddAsset(settings, assetFilePath);
-        }
-
-        public override void ApplyGlobal(AddressableAssetSettings settings,
-            HashSet<string> labels)
-        {
-            AddressablesAssetStore.CreateGlobalLabels(settings);
+            AddressablesAssetStore.AddGlobalLabels(settings);
         }
         #endregion
     }
