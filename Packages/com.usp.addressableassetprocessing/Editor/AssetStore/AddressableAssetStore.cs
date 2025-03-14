@@ -9,10 +9,17 @@ namespace USP.AddressablesAssetProcessing
 
     public class AddressablesAssetStore : AssetStore
     {
+        #region Properties
+        /// <summary>
+        /// A value indicating whether the source of the assets can be written to or not.
+        /// </summary>
+        public override bool IsReadOnly => false;
+        #endregion
+
         #region Methods
         public virtual void AddAsset(AddressableAssetSettings settings, string assetFilePath)
         {
-            bool found = DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
+            bool found = dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
 
             if (found)
             {
@@ -32,12 +39,12 @@ namespace USP.AddressablesAssetProcessing
                 return;
             }
 
-            DataByAssetPath.Add(assetFilePath, userData);
+            dataByAssetPath.Add(assetFilePath, userData);
         }
 
         public virtual void AddAsset(AddressableAssetEntry entry)
         {
-            bool found = DataByAssetPath.TryGetValue(entry.AssetPath, out MetaAddressables.UserData userData);
+            bool found = dataByAssetPath.TryGetValue(entry.AssetPath, out MetaAddressables.UserData userData);
 
             if (found)
             {
@@ -46,7 +53,7 @@ namespace USP.AddressablesAssetProcessing
 
             userData = new MetaAddressables.UserData(entry);
 
-            DataByAssetPath.Add(entry.AssetPath, userData);
+            dataByAssetPath.Add(entry.AssetPath, userData);
         }
 
         public void CreateGlobalLabels(AddressableAssetSettings settings)

@@ -101,13 +101,13 @@ namespace USP.AddressablesAssetProcessing
             var properties = new Dictionary<string, CompareOperand>(3);
             
             combinedAssetApplicator.SimulatedAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData processingData);
-            properties[ProcessingDataKey] = new CompareOperand(processingData, true);
+            properties[ProcessingDataKey] = new CompareOperand(processingData, combinedAssetApplicator.SimulatedAssetStore.IsReadOnly);
 
             combinedAssetApplicator.MetaAddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData metafileData);
-            properties[MetafileDataKey] = new CompareOperand(metafileData, false);
+            properties[MetafileDataKey] = new CompareOperand(metafileData, combinedAssetApplicator.MetaAddressablesAssetStore.IsReadOnly);
 
             combinedAssetApplicator.AddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData addressablesData);
-            properties[AddressablesDataKey] = new CompareOperand(addressablesData, false);
+            properties[AddressablesDataKey] = new CompareOperand(addressablesData, combinedAssetApplicator.AddressablesAssetStore.IsReadOnly);
 
             var result = new ComparisonEntry();
             result.comparer = userDataComparer;

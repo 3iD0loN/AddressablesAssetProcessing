@@ -11,13 +11,20 @@ namespace USP.AddressablesAssetProcessing
 
     public class SimulatedAssetStore : AssetStore
     {
+        #region Properties
+        /// <summary>
+        /// A value indicating whether the source of the assets can be written to or not.
+        /// </summary>
+        public override bool IsReadOnly => true;
+        #endregion
+
         #region Methods
         public void AddAsset(string assetFilePath,
             AddressableAssetGroupTemplate group,
             string address,
             HashSet<string> labels)
         {
-            bool found = DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
+            bool found = dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
 
             if (found)
             {
@@ -31,7 +38,7 @@ namespace USP.AddressablesAssetProcessing
             var groupData = new MetaAddressables.GroupData(group);
             userData = new MetaAddressables.UserData(assetData, groupData);
 
-            DataByAssetPath.Add(assetFilePath, userData);
+            dataByAssetPath.Add(assetFilePath, userData);
         }
         #endregion
     }

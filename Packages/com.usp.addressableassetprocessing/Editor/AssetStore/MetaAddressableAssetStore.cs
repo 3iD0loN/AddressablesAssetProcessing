@@ -9,10 +9,17 @@ namespace USP.AddressablesAssetProcessing
 
     public class MetaAddressablesAssetStore : AssetStore
     {
+        #region Properties
+        /// <summary>
+        /// A value indicating whether the source of the assets can be written to or not.
+        /// </summary>
+        public override bool IsReadOnly => false;
+        #endregion
+
         #region Methods
         public virtual void AddAsset(string assetFilePath)
         {
-            bool found = DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
+            bool found = dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
 
             if (found)
             {
@@ -26,7 +33,7 @@ namespace USP.AddressablesAssetProcessing
                 return;
             }
 
-            DataByAssetPath.Add(assetFilePath, userData);
+            dataByAssetPath.Add(assetFilePath, userData);
         }
         #endregion
     }
