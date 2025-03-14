@@ -21,10 +21,6 @@ namespace USP.AddressablesAssetProcessing
 
             SimulatedAssetStore.AddGlobalLabels(labels);
         }
-
-        public virtual void ApplyGlobal(AddressableAssetSettings settings, 
-            HashSet<string> labels)
-        {}
         #endregion
     }
 }

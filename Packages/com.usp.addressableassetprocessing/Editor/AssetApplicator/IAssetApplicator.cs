@@ -11,8 +11,5 @@ namespace USP.AddressablesAssetProcessing
             AddressableAssetGroupTemplate group,
             string address,
             HashSet<string> labels);
-
-        void ApplyGlobal(AddressableAssetSettings settings, 
-            HashSet<string> labels);
     }
 }

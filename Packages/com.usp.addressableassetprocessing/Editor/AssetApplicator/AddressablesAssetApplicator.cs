@@ -40,10 +40,6 @@ namespace USP.AddressablesAssetProcessing
 
             SetGlobalLabels(settings, labels);
         }
-
-        public void ApplyGlobal(AddressableAssetSettings settings,
-            HashSet<string> labels)
-        { }
         #endregion
     }
 }
