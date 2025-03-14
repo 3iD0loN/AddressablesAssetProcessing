@@ -1,9 +1,6 @@
-using System.Collections.Generic;
-
-using UnityEditor.AddressableAssets.Settings;
-
 namespace USP.AddressablesAssetProcessing
 {
+    using UnityEditor;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
 
@@ -31,6 +28,30 @@ namespace USP.AddressablesAssetProcessing
             if (userData == null)
             {
                 return;
+            }
+
+            dataByAssetPath.Add(assetFilePath, userData);
+        }
+
+        public virtual void AddAsset(MetaAddressables.UserData userData)
+        {
+            if (userData == null)
+            {
+                return;
+            }
+
+            var assetFilePath = AssetDatabase.GUIDToAssetPath(userData.Asset.Guid);
+
+            bool found = dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData other);
+
+            if (found)
+            {
+                if (userData == other)
+                {
+                    return;
+                }
+
+                throw new System.Exception("Collision!");
             }
 
             dataByAssetPath.Add(assetFilePath, userData);
