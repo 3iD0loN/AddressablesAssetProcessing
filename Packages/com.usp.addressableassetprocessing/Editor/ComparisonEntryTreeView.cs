@@ -14,17 +14,17 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
     #region Fields
     private readonly VisualTreeAsset comparisonEntryTreeViewUxml;
 
-    private readonly StyleSheet comparisonEntryUss;
+    private readonly StyleSheet compareOperandUss;
 
-    private readonly VisualTreeAsset compareEntryControlsUxml;
+    private readonly VisualTreeAsset compareOperandUxml;
     #endregion
 
     #region Methods
     public ComparisonEntryTreeView()
     {
         comparisonEntryTreeViewUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\ComparisonEntryTreeView.uxml");
-        comparisonEntryUss = Helper.LoadRequired<StyleSheet>("StyleSheet\\ComparisonEntry.uss");
-        compareEntryControlsUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\LeftRightCompareEntryControls.uxml");
+        compareOperandUss = Helper.LoadRequired<StyleSheet>("StyleSheet\\CompareOperand.uss");
+        compareOperandUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\CompareOperand.uxml");
     }
 
     public virtual void SetRootItems(IList<TreeViewItemData<ComparisonEntry>> rootItems)
@@ -77,7 +77,7 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
 
         foreach (string compareOperation in firstTopEntry.compareOperations.Keys)
         {
-            ConfigureComparison(compareOperation, compareEntryControlsUxml, comparisonEntryUss);
+            ConfigureComparison(compareOperation, compareOperandUxml, compareOperandUss);
         }
 
         base.Rebuild();
@@ -123,29 +123,62 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
         };
         column.bindCell = (VisualElement element, int index) =>
         {
-            var sameLabel = element.Q<Label>("same-label");
-            var differentButtons = element.Q<VisualElement>("different-buttons");
-
-            var copyLeftButton = element.Q<Button>("copy-left-button");
-            var copyRightButton = element.Q<Button>("copy-right-button");
-
-            //copyLeftButton.clicked -=
-            //copyLeftButton.clicked +=
-
-            //copyRightButton.clicked -=
-            //copyRightButton.clicked +=
-
             var entry = GetItemDataForIndex<ComparisonEntry>(index);
             CompareOperation operation = entry.compareOperations[name];
+
+            var sameLabel = element.Q<Label>("same-label");
+            var differentLabel = element.Q<Label>("different-label");
+            var differentButtons = element.Q<VisualElement>("different-buttons");
+
             if (operation.result)
             {
                 sameLabel.style.display = DisplayStyle.Flex;
+                differentLabel.style.display = DisplayStyle.None;
                 differentButtons.style.display = DisplayStyle.None;
+
+                element.style.width = sameLabel.style.width;
+
+                return;
+            }
+
+            if (operation.leftHand.isReadonly && operation.rightHand.isReadonly)
+            {
+                sameLabel.style.display = DisplayStyle.None;
+                differentLabel.style.display = DisplayStyle.Flex;
+                differentButtons.style.display = DisplayStyle.None;
+
+                element.style.width = differentLabel.style.width;
+
+                return;
+            }
+
+            sameLabel.style.display = DisplayStyle.None;
+            differentLabel.style.display = DisplayStyle.None;
+            differentButtons.style.display = DisplayStyle.Flex;
+
+            var copyLeftButton = element.Q<Button>("copy-left-button");
+
+            //element.style.width = 0;
+            if (operation.leftHand.isReadonly)
+            {
+                copyLeftButton.style.display = DisplayStyle.None;
             }
             else
             {
-                sameLabel.style.display = DisplayStyle.None;
-                differentButtons.style.display = DisplayStyle.Flex;
+                //element.width.value += copyLeftButton.style.width.value;
+                //copyLeftButton.clicked =
+            }
+
+            var copyRightButton = element.Q<Button>("copy-right-button");
+
+            if (operation.rightHand.isReadonly)
+            {
+                copyRightButton.style.display = DisplayStyle.None;
+            }
+            else
+            {
+                //element.width.value += copyRightButton.style.width.value;
+                //copyRightButton.clicked =
             }
         };
     }

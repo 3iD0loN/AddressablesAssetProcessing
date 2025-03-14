@@ -2,9 +2,9 @@
     <ui:MultiColumnTreeView name="comparison-entry-tree-view" show-border="true" reorderable="false" auto-expand="true" show-alternating-row-backgrounds="ContentOnly" selection-type="Single" fixed-item-height="20">
         <ui:Columns>
             <ui:Column name="processing-data" title="File Processing Rules" visible="true" stretchable="true" min-width="74px" />
-            <ui:Column name="processing-metafile-compare" title="Compare" visible="true" stretchable="false" width="125px" min-width="37px" style="-unity-text-align: middle-center;" />
+            <ui:Column name="processing-metafile-compare" title="Compare" visible="true" stretchable="false" width="65px" min-width="65px" style="-unity-text-align: middle-center;" />
             <ui:Column name="metafile-data" title="Meta File Data" visible="true" stretchable="true" min-width="74px" />
-            <ui:Column name="metafile-addressables-compare" title="Compare" visible="true" stretchable="false" width="125px" min-width="37px" style="-unity-text-align: middle-center;" />
+            <ui:Column name="metafile-addressables-compare" title="Compare" visible="true" stretchable="false" width="65px" min-width="65px" style="-unity-text-align: middle-center;" />
             <ui:Column name="addressables-data" title="Addressables Data" visible="true" stretchable="true" min-width="74px" />
         </ui:Columns>
     </ui:MultiColumnTreeView>

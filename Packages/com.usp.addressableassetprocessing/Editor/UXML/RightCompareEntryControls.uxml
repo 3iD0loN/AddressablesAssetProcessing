@@ -1,6 +1,0 @@
-﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:Label name="same-label" text="Same" class="centered-label"/>
-    <ui:VisualElement name="different-buttons" class="comparison-controls">
-        <ui:Button name="copy-right-button" text="Copy →" />
-    </ui:VisualElement>
-</ui:UXML>
