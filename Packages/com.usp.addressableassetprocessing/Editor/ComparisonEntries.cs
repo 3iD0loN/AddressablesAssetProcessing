@@ -1,19 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 
 namespace USP.AddressablesAssetProcessing
 {
-    using DocumentFormat.OpenXml.Office2013.PowerPoint;
-    using NUnit.Framework;
-    using System.Collections;
-    using System.Linq;
-    using System.Linq.Expressions;
-    using System.Reflection;
-    using System.Security.Policy;
-    using UnityEditor;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
-    using static PlasticGui.LaunchDiffParameters;
 #endif
 
     public class CompareOperand
