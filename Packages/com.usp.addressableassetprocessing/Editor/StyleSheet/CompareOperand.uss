@@ -1,11 +1,17 @@
-.centered-label {
+.compare-label {
     white-space: pre;
     -unity-text-align: middle-center;
+    justify-content: center;
 }
 
-.comparison-controls {
+.copy-buttons {
     flex-direction: row;
     flex-wrap: nowrap;
     align-items: flex-start;
     justify-content: center;
+}
+
+.copy-button {
+    min-width: 55px;
+    width: 55px;
 }

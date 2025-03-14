@@ -1,8 +1,9 @@
-﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:Label name="same-label" text="Same" class="centered-label"/>
-    <ui:Label name="different-label" text="Different" class="centered-label" min-width="65px" width="65px"/>
-    <ui:VisualElement name="different-buttons" class="comparison-controls" min-width="65px" width="65px">
-        <ui:Button name="copy-left-button" text="← Copy" min-width="65px" width="65px" />
-        <ui:Button name="copy-right-button" text="Copy →" min-width="65px" width="65px" />
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Packages/com.usp.addressableassetprocessing/Editor/StyleSheet/CompareOperand.uss?fileID=7433441132597879392&amp;guid=b9d52e94bc22e6641b19ff46bbc9f6a0&amp;type=3#CompareOperand" />
+    <ui:Label name="same-label" text="Same" class="compare-label" style="color: green;" />
+    <ui:Label name="different-label" text="Different" class="compare-label" style="color: red;" />
+    <ui:VisualElement name="different-buttons" class="copy-buttons">
+        <ui:Button name="copy-left-button" text="← Copy" class="copy-button" style="color: yellow;" />
+        <ui:Button name="copy-right-button" text="Copy →" class="copy-button" style="color: yellow;" />
     </ui:VisualElement>
 </ui:UXML>
