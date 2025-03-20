@@ -134,35 +134,58 @@ namespace USP.AddressablesAssetProcessing
                     // It is now the comparer for the children, which will be the elements in the container.
                     comparer = enumerableComparer.ItemComparer;
 
+                    IPropertyComparer itemComparer;
+                    /*/
+                    var comparerType = comparer.GetType();
+                    if (comparerType.IsGenericType && comparerType.GetGenericTypeDefinition() == typeof(KeyValuePairComparer<,>))
+                    {
+                        PropertyComparerPair keyComparerPair = comparer.Children.First();
+                        itemComparer = Activator.CreateInstance(comparerType, keyComparerPair.PropertyComparer) as IPropertyComparer;
+                    }
+                    else
+                    //*/
+                    {
+                        itemComparer = enumerableComparer.ItemComparer;
+                    }
+
                     var propertyComparerByHash = new Dictionary<object, PropertyComparerPair>();
 
-                    var x = new HashSet<object[]>(new EnumerableComparer(ObjectComparer.Default));
+                    var tupleComparer = new PropertyComparer<Tuple<object, object>>((x => x.Item1, itemComparer), (x => x.Item2, ObjectComparer.Default));
+                    var x = new HashSet<Tuple<object, object>>(tupleComparer);
 
                     // For every object that will be compared, perform the following:
-                    foreach ((string key, CompareOperand operand) in compareTargets)
+                    foreach ((string key, CompareOperand parentOperand) in compareTargets)
                     {
-                        // The comparer is an enumerable comparer, so we assume that the values in the operands are enumerable.
-                        var enumerable = operand.value as IEnumerable;
-
-                        if (enumerable == null)
+                        // If the current object that is being compared is not an enumerable container, then:
+                        if (parentOperand.value is not IEnumerable enumerable)
                         {
+                            // Skip this item.
                             continue;
                         }
 
-                        IEnumerator enumerator = enumerable.GetEnumerator();
+                        // Otherwise, the current object being compared is an enumerable container.
 
-                        // For every element in the container, perform the following:
-                        while (enumerator.MoveNext())
+                        // For every item in the container, perform the following:
+                        foreach (object value in enumerable)
                         {
-                            object value = enumerator.Current;
+                            var k = new Tuple<object, object>(value, enumerable);
+                            x.Add(k);
 
-                            x.Add(Get(value, enumerable));
+                            /*/
+                            if (value is KeyValuePair<Type, MetaAddressables.GroupSchemaData> y)
+                            {
+                                if (y.Value is MetaAddressables.BundledAssetGroupSchemaData z)
+                                {
+                                    UnityEngine.Debug.Log($"A container: {ObjectComparer.Default.GetHashCode(parentOperand.value)} {z}, BundleMode: {z.BundleMode}");
+                                }
+                            }
+                            //*/
 
                             bool found = propertyComparerByHash.TryGetValue(value, out PropertyComparerPair pair);
 
                             if (!found)
                             {
-                                Expression<Func<IEnumerable, object>> z = (IEnumerable y) => GetValueOrDefault(x, value, enumerable); 
+                                Expression<Func<IEnumerable, object>> z = (IEnumerable y) => GetValueOrDefault(x, value, y); 
                                 pair = new PropertyComparerPair(z, comparer);
                                  
                                 propertyComparerByHash.Add(value, pair);
@@ -171,6 +194,31 @@ namespace USP.AddressablesAssetProcessing
                     }
 
                     comparerChildren = propertyComparerByHash.Values;
+
+                    /*/
+                    UnityEngine.Debug.Log("0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0");
+
+                    foreach (PropertyComparerPair comparerChild in comparerChildren)
+                    {
+                        var properties = new Dictionary<string, CompareOperand>(compareTargets.Count);
+                        foreach ((string key, CompareOperand parentOperand) in compareTargets)
+                        {
+                            if (parentOperand == null)
+                            {
+                                continue;
+                            }
+
+                            object childValue = (parentOperand.value != null) ? comparerChild.Access(parentOperand.value) : null;
+
+                            var childOperand = new CompareOperand(childValue, parentOperand.isReadonly);
+                            properties.Add(key, childOperand);
+                        }
+                    }
+
+                    UnityEngine.Debug.Log("1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1");
+                    
+                    return null;
+                    //*/
                 }
                 else
                 {
@@ -192,22 +240,21 @@ namespace USP.AddressablesAssetProcessing
 
                     object childValue = (parentOperand.value != null) ? comparerChild.Access(parentOperand.value) : null;
 
-                    var operand = new CompareOperand(childValue, parentOperand.isReadonly);
-                    properties.Add(key, operand);
+                    var childOperand = new CompareOperand(childValue, parentOperand.isReadonly);
+                    properties.Add(key, childOperand);
                 }
 
                 // The first item should exist along with at least one other to compare against.
                 // It should be available to compare against all other items, which are alike enough to compare.
                 // Therefore, there is at least one and it would be reasonable have the same type.
-                CompareOperand firstOperand = properties.First().Value;
+                CompareOperand firstOperand = properties.First(pair => pair.Value.value != null).Value;
                 object firstValue = firstOperand.value;
 
                 var propertyInfo = comparerChild.GetMemberInfo<PropertyInfo>();
-                var methodInfo = comparerChild.GetMethodInfo();
 
                 // If the first value is valid, then use the concrete type, since a property, field, or method
                 // can obscure the type of an inherited item. Otherwise, fallback to using the property type.  
-                Type childType = (firstValue != null) ? firstValue.GetType() : (methodInfo != null) ? methodInfo.ReturnType : default;
+                Type childType = (firstValue != null) ? firstValue.GetType() : default;
 
                 var childEntry = new ComparisonEntry();
                 childEntry.entryName = propertyInfo != null ? propertyInfo.Name : $"Element {i}";
@@ -220,7 +267,7 @@ namespace USP.AddressablesAssetProcessing
                 children.Add(childEntry);
                 i++;
             }
-
+            
             return children;
         }
 
@@ -229,17 +276,22 @@ namespace USP.AddressablesAssetProcessing
             return new object[] { value, enumerable };
         }
 
-        private static object GetValueOrDefault(ISet<object[]> x, object value, IEnumerable enumerable)
+        private static object GetValueOrDefault(ISet<Tuple<object, object>> x, object value, IEnumerable enumerable)
         {
-            return x.Contains(Get(value, enumerable)) ? value : null;
-        }
+            var key = new Tuple<object, object>(value, enumerable);
 
-        private static object GetValueOrDefault(IReadOnlyDictionary<object[], object> x, object value, IEnumerable enumerable)
-        {
-            var key = Get(value, enumerable);
+            var v = x.Contains(key) ? value : null;
 
-            x.TryGetValue(key, out object v);
-
+            /*/
+            if (v is KeyValuePair<Type, MetaAddressables.GroupSchemaData> y)
+            {
+                if (y.Value is MetaAddressables.BundledAssetGroupSchemaData z)
+                {
+                    UnityEngine.Debug.Log($"B container: {ObjectComparer.Default.GetHashCode(enumerable)} {z}, BundleMode: {z.BundleMode}");
+                }
+            }
+            //*/
+            
             return v;
         }
     }
