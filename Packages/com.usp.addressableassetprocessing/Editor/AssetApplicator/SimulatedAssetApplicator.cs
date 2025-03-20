@@ -4,6 +4,8 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using USP.MetaAddressables;
+
     public class SimulatedAssetApplicator : IAssetApplicator
     {
         #region Properties
@@ -24,6 +26,13 @@ namespace USP.AddressablesAssetProcessing
             SimulatedAssetStore.AddAsset(assetFilePath, group, address, labels);
 
             SimulatedAssetStore.AddGlobalLabels(labels);
+        }
+
+        public virtual void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
+        {
+            SimulatedAssetStore.AddAsset(userData, true);
+
+            SimulatedAssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion
     }

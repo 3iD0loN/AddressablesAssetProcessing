@@ -6,6 +6,7 @@ using UnityEditor.AddressableAssets.Settings;
 namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
+    using static Codice.Client.Common.EventTracking.TrackFeatureUseEvent.Features.DesktopGUI.Filters;
 
     public class AddressablesAssetStore : AssetStore
     {
@@ -42,13 +43,16 @@ namespace USP.AddressablesAssetProcessing
             dataByAssetPath.Add(assetFilePath, userData);
         }
 
-        public virtual void AddAsset(AddressableAssetEntry entry)
+        public virtual void AddAsset(AddressableAssetEntry entry, bool overwrite = false)
         {
             bool found = dataByAssetPath.TryGetValue(entry.AssetPath, out MetaAddressables.UserData userData);
 
             if (found)
             {
-                return;
+                if (!overwrite)
+                {
+                    throw new System.Exception("Collision!");
+                }
             }
 
             userData = new MetaAddressables.UserData(entry);

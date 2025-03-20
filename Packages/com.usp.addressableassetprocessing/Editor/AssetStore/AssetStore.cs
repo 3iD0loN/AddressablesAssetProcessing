@@ -2,6 +2,7 @@ using System.Collections.Generic;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using UnityEditor;
     using USP.MetaAddressables;
 
     public interface IAssetStore
@@ -42,6 +43,43 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Methods
+        public virtual void AddAsset(MetaAddressables.UserData userData, bool overwrite = false)
+        {
+            if (userData == null)
+            {
+                return;
+            }
+
+            var assetFilePath = AssetDatabase.GUIDToAssetPath(userData.Asset.Guid);
+
+            AddAsset(userData, assetFilePath, overwrite);
+        }
+
+        public virtual void AddAsset(MetaAddressables.UserData userData, string assetFilePath, bool overwrite = false)
+        {
+            if (userData == null)
+            {
+                return;
+            }
+
+            bool found = dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData other);
+
+            if (found)
+            {
+                if (userData == other)
+                {
+                    return;
+                }
+
+                if (!overwrite)
+                {
+                    throw new System.Exception("Collision!");
+                }
+            }
+
+            dataByAssetPath.Add(assetFilePath, userData);
+        }
+
         public virtual void AddGlobalLabels(HashSet<string> labels)
         {
             AddGlobalLabels(labels as IEnumerable<string>);
