@@ -4,6 +4,8 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using UnityEditor;
+    using UnityEditor.AddressableAssets;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
 
@@ -63,11 +65,26 @@ namespace USP.AddressablesAssetProcessing
             string address,
             HashSet<string> labels)
         {
-            var userData = SetAddressableAsset(settings, assetFilePath, group, address, labels);
-            assetStore.AddAsset(userData);
+            MetaAddressables.UserData userData = SetAddressableAsset(settings, assetFilePath, group, address, labels);
 
-            AddressablesAssetApplicator.SetGlobalLabels(settings, labels);
-            assetStore.AddGlobalLabels(labels);
+            assetStore.AddAsset(userData, assetFilePath, false);
+            assetStore.AddGlobalLabels(userData.Asset.Labels);
+        }
+
+        public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
+        {
+            var assetFilePath = AssetDatabase.GUIDToAssetPath(userData.Asset.Guid);
+
+            // Generate Addressables groups from the Meta file.
+            // This is done before saving MetaAddressables to file in case we find groups that already match,
+            // which will correct the Group member to the better match.
+            MetaAddressables.Generate(ref userData, settings);
+
+            // Save to MetaAddressables changes.
+            MetaAddressables.Write(assetFilePath, userData);
+
+            assetStore.AddAsset(userData, assetFilePath, true);
+            assetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion
     }

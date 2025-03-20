@@ -33,7 +33,7 @@ namespace USP.AddressablesAssetProcessing
             dataByAssetPath.Add(assetFilePath, userData);
         }
 
-        public virtual void AddAsset(MetaAddressables.UserData userData)
+        public virtual void AddAsset(MetaAddressables.UserData userData, bool overwrite = false)
         {
             if (userData == null)
             {
@@ -41,6 +41,16 @@ namespace USP.AddressablesAssetProcessing
             }
 
             var assetFilePath = AssetDatabase.GUIDToAssetPath(userData.Asset.Guid);
+
+            AddAsset(userData, assetFilePath, overwrite);
+        }
+
+        public virtual void AddAsset(MetaAddressables.UserData userData, string assetFilePath, bool overwrite = false)
+        {
+            if (userData == null)
+            {
+                return;
+            }
 
             bool found = dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData other);
 
@@ -51,7 +61,10 @@ namespace USP.AddressablesAssetProcessing
                     return;
                 }
 
-                throw new System.Exception("Collision!");
+                if (!overwrite)
+                {
+                    throw new System.Exception("Collision!");
+                }
             }
 
             dataByAssetPath.Add(assetFilePath, userData);

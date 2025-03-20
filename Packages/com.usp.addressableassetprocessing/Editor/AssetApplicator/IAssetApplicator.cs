@@ -4,6 +4,8 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using USP.MetaAddressables;
+
     public interface IAssetApplicator
     {
         #region Properties
@@ -16,6 +18,8 @@ namespace USP.AddressablesAssetProcessing
             AddressableAssetGroupTemplate group,
             string address,
             HashSet<string> labels);
+
+        void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData);
         #endregion
     }
 }

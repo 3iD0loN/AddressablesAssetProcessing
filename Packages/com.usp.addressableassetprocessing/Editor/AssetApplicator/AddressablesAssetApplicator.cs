@@ -49,6 +49,16 @@ namespace USP.AddressablesAssetProcessing
             SetGlobalLabels(settings, labels);
             assetStore.AddGlobalLabels(labels);
         }
+
+        public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
+        {
+            AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, userData.Group);
+            AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, group, userData.Asset);
+            assetStore.AddAsset(entry);
+
+            SetGlobalLabels(settings, userData.Asset.Labels);
+            assetStore.AddGlobalLabels(userData.Asset.Labels);
+        }
         #endregion
     }
 }
