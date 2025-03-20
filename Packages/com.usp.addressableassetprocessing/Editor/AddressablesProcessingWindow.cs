@@ -11,9 +11,6 @@ using USP.AddressablesAssetProcessing;
 using USP.MetaAddressables;
 
 using Object = UnityEngine.Object;
-using UnityEditor.AddressableAssets.Build;
-using System.Linq;
-using UnityEditorInternal;
 
 public static class Helper
 {
