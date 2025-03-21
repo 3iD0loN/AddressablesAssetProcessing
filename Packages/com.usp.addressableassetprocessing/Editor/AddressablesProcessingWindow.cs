@@ -121,8 +121,6 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         var windowUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\Window.uxml");
         windowUxml.CloneTree(rootVisualElement);
 
-        var folderStateUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\FolderState.uxml");
-
         var assetStateUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
 
         VisualElement globalState = rootVisualElement.Q<VisualElement>("global-settings");
