@@ -7,7 +7,7 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public class AddressablesAssetApplicator : IAssetApplicator
+    public class AddressablesAssetApplicator : IAssetApplicator<AddressablesAssetStore>
     {
         #region Static Methods
         public static void SetGlobalLabels(AddressableAssetSettings settings, HashSet<string> labels)
@@ -28,11 +28,9 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Fields
-        private AddressablesAssetStore assetStore = new AddressablesAssetStore();
-        #endregion
+        public AddressablesAssetStore AssetStore { get; } = new AddressablesAssetStore();
 
-        #region Properties
-        public IAssetStore AssetStore => assetStore;
+        IAssetStore IAssetApplicator.AssetStore => AssetStore;
         #endregion
 
         #region Methods
@@ -44,20 +42,20 @@ namespace USP.AddressablesAssetProcessing
         {
             AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, groupTemplate);
             AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, assetFilePath, group, address, labels);
-            assetStore.AddAsset(entry);
+            AssetStore.AddAsset(entry);
 
             SetGlobalLabels(settings, labels);
-            assetStore.AddGlobalLabels(labels);
+            AssetStore.AddGlobalLabels(labels);
         }
 
         public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
         {
             AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, userData.Group);
             AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, group, userData.Asset);
-            assetStore.AddAsset(entry);
+            AssetStore.AddAsset(entry);
 
             SetGlobalLabels(settings, userData.Asset.Labels);
-            assetStore.AddGlobalLabels(userData.Asset.Labels);
+            AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion
     }

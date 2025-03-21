@@ -22,4 +22,12 @@ namespace USP.AddressablesAssetProcessing
         void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData);
         #endregion
     }
+
+    public interface IAssetApplicator<T> : IAssetApplicator
+        where T : IAssetStore
+    {
+        #region Properties
+        new T AssetStore { get; }
+        #endregion
+    }
 }

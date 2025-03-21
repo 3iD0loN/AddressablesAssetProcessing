@@ -6,14 +6,12 @@ namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
 
-    public class SimulatedAssetApplicator : IAssetApplicator
+    public class SimulatedAssetApplicator : IAssetApplicator<SimulatedAssetStore>
     {
         #region Properties
-        public SimulatedAssetStore SimulatedAssetStore { get; } = new SimulatedAssetStore();
-        #endregion
+        public SimulatedAssetStore AssetStore { get; } = new SimulatedAssetStore();
 
-        #region Properties
-        public IAssetStore AssetStore => SimulatedAssetStore;
+        IAssetStore IAssetApplicator.AssetStore => AssetStore;
         #endregion
 
         #region Methods
@@ -23,16 +21,16 @@ namespace USP.AddressablesAssetProcessing
             string address,
             HashSet<string> labels)
         {
-            SimulatedAssetStore.AddAsset(assetFilePath, group, address, labels);
+            AssetStore.AddAsset(assetFilePath, group, address, labels);
 
-            SimulatedAssetStore.AddGlobalLabels(labels);
+            AssetStore.AddGlobalLabels(labels);
         }
 
         public virtual void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
         {
-            SimulatedAssetStore.AddAsset(userData, true);
+            AssetStore.AddAsset(userData, true);
 
-            SimulatedAssetStore.AddGlobalLabels(userData.Asset.Labels);
+            AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion
     }

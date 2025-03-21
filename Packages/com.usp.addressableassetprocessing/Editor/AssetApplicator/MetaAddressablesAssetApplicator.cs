@@ -9,7 +9,7 @@ namespace USP.AddressablesAssetProcessing
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
 
-    public class MetaAddressablesAssetApplicator : IAssetApplicator
+    public class MetaAddressablesAssetApplicator : IAssetApplicator<MetaAddressablesAssetStore>
     {
         #region Static Methods
         public static MetaAddressables.UserData SetAddressableAsset(AddressableAssetSettings settings, string assetFilePath, 
@@ -50,12 +50,10 @@ namespace USP.AddressablesAssetProcessing
         }
         #endregion
 
-        #region Fields
-        private MetaAddressablesAssetStore assetStore = new MetaAddressablesAssetStore();
-        #endregion
-
         #region Properties
-        public IAssetStore AssetStore => assetStore;
+        public MetaAddressablesAssetStore AssetStore { get; } = new MetaAddressablesAssetStore();
+
+        IAssetStore IAssetApplicator.AssetStore => AssetStore;
         #endregion
 
         #region Methods
@@ -67,8 +65,8 @@ namespace USP.AddressablesAssetProcessing
         {
             MetaAddressables.UserData userData = SetAddressableAsset(settings, assetFilePath, group, address, labels);
 
-            assetStore.AddAsset(userData, assetFilePath, false);
-            assetStore.AddGlobalLabels(userData.Asset.Labels);
+            AssetStore.AddAsset(userData, assetFilePath, false);
+            AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
 
         public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
@@ -83,8 +81,8 @@ namespace USP.AddressablesAssetProcessing
             // Save to MetaAddressables changes.
             MetaAddressables.Write(assetFilePath, userData);
 
-            assetStore.AddAsset(userData, assetFilePath, true);
-            assetStore.AddGlobalLabels(userData.Asset.Labels);
+            AssetStore.AddAsset(userData, assetFilePath, true);
+            AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion
     }
