@@ -11,8 +11,5 @@
         </ui:VisualElement>
         <ui:VisualElement name="selected-processing-state" />
     </ui:TwoPaneSplitView>
-    <ui:Button name="collect-all-button" text="Enumerate All Assets" enabled="true" />
-    <ui:Button name="process-all-button" text="Process All Assets" enabled="false" />
-    <ui:Button name="collect-and-process-all-button" text="Enumerate and Process All Assets" enabled="true" />
     <ui:Button name="deduplicate-all-button" text="Deduplicate All Implicit Assets" enabled="false" />
 </ui:UXML>

@@ -1,0 +1,5 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Button name="collect-all-button" text="Identify Assets" enabled="true" />
+    <ui:Button name="process-all-button" text="Process Asset Rules" enabled="true" />
+    <ui:Button name="collect-and-process-all-button" text="Identify and Process Asset Rules" enabled="true" />
+</ui:UXML>

@@ -1,4 +1,4 @@
 ﻿<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <ui:Button name="process-asset-button" text="Process Asset" />
+    <FocusActions name="focus-actions" />
     <ComparisonEntryTreeView name="comparison-entry" show-border="true" reorderable="false" auto-expand="true" show-alternating-row-backgrounds="ContentOnly" selection-type="Single" fixed-item-height="20" />
 </ui:UXML>
