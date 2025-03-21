@@ -5,24 +5,6 @@ namespace USP.AddressablesAssetProcessing
     using UnityEditor;
     using USP.MetaAddressables;
 
-    public interface IAssetStore
-    {
-        #region Properties
-        /// <summary>
-        /// A value indicating whether the source of the assets can be written to or not.
-        /// </summary>
-        bool IsReadOnly { get; }
-
-        IReadOnlyDictionary<string, MetaAddressables.UserData> DataByAssetPath { get; }
-
-        ISet<string> GlobalLabels { get; }
-        #endregion
-
-        #region Methods
-        void AddGlobalLabels(HashSet<string> labels);
-        #endregion
-    }
-
     public abstract class AssetStore : IAssetStore
     {
         #region Fields
@@ -37,9 +19,15 @@ namespace USP.AddressablesAssetProcessing
         /// </summary>
         public virtual bool IsReadOnly { get; }
 
+        /// <summary>
+        /// The Addressables data associated with the asset file path.
+        /// </summary>
         public virtual IReadOnlyDictionary<string, MetaAddressables.UserData> DataByAssetPath => dataByAssetPath;
 
-        public virtual ISet<string> GlobalLabels => globalLabels;
+        /// <summary>
+        /// The global set of labels.
+        /// </summary>
+        public virtual IReadOnlyCollection<string> GlobalLabels => globalLabels;
         #endregion
 
         #region Methods
@@ -87,7 +75,7 @@ namespace USP.AddressablesAssetProcessing
 
         protected void AddGlobalLabels(IEnumerable<string> labels)
         {
-            GlobalLabels.UnionWith(labels);
+            globalLabels.UnionWith(labels);
         }
         #endregion
     }
