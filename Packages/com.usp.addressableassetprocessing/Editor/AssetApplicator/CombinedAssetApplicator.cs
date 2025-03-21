@@ -4,44 +4,68 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+    using UnityEditor;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
 #endif
 
-    public class CombinedAssetApplicator : SimulatedAssetApplicator
+    public class CombinedAssetApplicator : IAssetApplicator
     {
         #region Properties
-        public AddressablesAssetStore AddressablesAssetStore { get; }
+        public SimulatedAssetApplicator SimulatedAssetApplicator { get; }
+
+        public AddressablesAssetApplicator AddressablesAssetApplicator { get; }
 
 #if ENABLE_METAADDRESSABLES
-        public MetaAddressablesAssetStore MetaAddressablesAssetStore { get; }
+        public MetaAddressablesAssetApplicator MetaAddressablesAssetApplicator { get; }
 #endif
+        public IAssetStore AssetStore => SimulatedAssetApplicator.AssetStore;
         #endregion
 
         #region Methods
         public CombinedAssetApplicator(AddressablesAssetStore addressablesAssetStore = null)
         {
-            AddressablesAssetStore = addressablesAssetStore ?? new AddressablesAssetStore();
+            SimulatedAssetApplicator = new SimulatedAssetApplicator();
+
 #if ENABLE_METAADDRESSABLES
-            MetaAddressablesAssetStore = new MetaAddressablesAssetStore();
+            MetaAddressablesAssetApplicator = new MetaAddressablesAssetApplicator();
 #endif
+
+            AddressablesAssetApplicator = new AddressablesAssetApplicator(addressablesAssetStore);
         }
 
-        public override void ApplyAsset(AddressableAssetSettings settings,
+        public void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
             AddressableAssetGroupTemplate group,
             string address,
             HashSet<string> labels)
         {
-            base.ApplyAsset(settings, assetFilePath, group, address, labels);
+            SimulatedAssetApplicator.ApplyAsset(settings, assetFilePath, group, address, labels);
 
+            AddAsset(settings, assetFilePath, labels);
+        }
+
+        public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
+        {
+            var assetFilePath = AssetDatabase.GUIDToAssetPath(userData.Asset.Guid);
+
+            SimulatedAssetApplicator.ApplyAsset(settings, userData, assetFilePath);
+
+            AddAsset(settings, assetFilePath, userData.Asset.Labels);
+        }
+
+        private void AddAsset(AddressableAssetSettings settings, string assetFilePath, HashSet<string> labels)
+        {
 #if ENABLE_METAADDRESSABLES
-            MetaAddressablesAssetStore.AddAsset(assetFilePath);
-            MetaAddressablesAssetStore.AddGlobalLabels(labels);
+            var metaAddressablesAssetStore = MetaAddressablesAssetApplicator.AssetStore;
+            metaAddressablesAssetStore.AddAsset(assetFilePath);
+            metaAddressablesAssetStore.AddGlobalLabels(labels);
 #endif
 
-            AddressablesAssetStore.AddAsset(settings, assetFilePath);
-            AddressablesAssetStore.AddGlobalLabels(settings);
+            var addressablesAssetStore = AddressablesAssetApplicator.AssetStore;
+            addressablesAssetStore.AddAsset(settings, assetFilePath);
+            addressablesAssetStore.AddGlobalLabels(settings);
         }
         #endregion
     }

@@ -127,7 +127,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         VisualElement globalState = rootVisualElement.Q<VisualElement>("global-settings");
         CreateGlobalStateGUI(globalState);
 
-        AddressablesAssetStore addressablesAssetStore = BuildAddressablesAssetStore();
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressablesAssetStore addressablesAssetStore = BuildAddressablesAssetStore(settings);
         List<ProcessingState> folderStates = BuildStates(addressablesAssetStore);
 
         var entriesByAssetFilepath = new Dictionary<string, ComparisonEntry>();
@@ -204,8 +205,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
                     collectAndProcessFolderAssetsButton.clicked += () =>
                     {
-                        OnCollectAndProcessFolderAssets(selectedItem);
-                        OnCompareFolderAssets(selectedItem, entriesByAssetFilepath);
+                        OnCollectAndProcessFolderAssets(settings, selectedItem);
+                        OnCompareFolderAssets(settings, selectedItem, entriesByAssetFilepath);
 
                         mainTreeView.SetRootItems(folderItems);
                         mainTreeView.ExpandItem(selectedItem.id, true);
@@ -218,8 +219,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                     
                     processFolderButton.clicked += () =>
                     {
-                        OnProcessFolderAssets(selectedItem);
-                        OnCompareFolderAssets(selectedItem, entriesByAssetFilepath);
+                        OnProcessFolderAssets(settings, selectedItem);
+                        OnCompareFolderAssets(settings, selectedItem, entriesByAssetFilepath);
 
                         mainTreeView.SetRootItems(folderItems);
                         mainTreeView.ExpandItem(selectedItem.id, true);
@@ -234,15 +235,20 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 {
                     assetStateUxml.CloneTree(selectedState);
 
-                    var combinedAssetApplicator = assetState.assetApplicator as CombinedAssetApplicator;
-                    ComparisonEntry comparisonEntry = ComparisonEntries.CreateEntry(combinedAssetApplicator, assetState.path);
-                    var comparisonEntryItems = new List<TreeViewItemData<ComparisonEntry>>();
-                    Pack(comparisonEntry, comparisonEntryItems);
-
                     ComparisonEntryTreeView comparisonEntryView = rootVisualElement.Q<ComparisonEntryTreeView>("comparison-entry");
-                    comparisonEntryView.SetRootItems(comparisonEntryItems);
-                    comparisonEntryView.Rebuild();
-                    comparisonEntryView.ExpandAll();
+
+                    System.Action update = () =>
+                    {
+                        var combinedAssetApplicator = assetState.assetApplicator as CombinedAssetApplicator;
+                        ComparisonEntry comparisonEntry = ComparisonEntries.CreateEntry(settings, combinedAssetApplicator, assetState.path);
+                        var comparisonEntryItems = new List<TreeViewItemData<ComparisonEntry>>();
+                        Pack(comparisonEntry, comparisonEntryItems);
+                        comparisonEntryView.SetRootItems(comparisonEntryItems);
+                        comparisonEntryView.Rebuild();
+                        comparisonEntryView.ExpandAll();
+                    };
+                    comparisonEntryView.changed += update;
+                    update();
                 }
             }
         };
@@ -268,8 +274,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         collectAndProcessAllAssetsButton.clicked += () =>
         {
-            OnCollectAndProcessAllAssets(folderItems);
-            OnCompareAssets(folderItems, entriesByAssetFilepath);
+            OnCollectAndProcessAllAssets(settings, folderItems);
+            OnCompareAssets(settings, folderItems, entriesByAssetFilepath);
 
             mainTreeView.SetRootItems(folderItems);
             mainTreeView.ExpandAll();
@@ -283,8 +289,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         processAllButton.clicked += () =>
         {
-            OnProcessAllAssets(folderItems);
-            OnCompareAssets(folderItems, entriesByAssetFilepath);
+            OnProcessAllAssets(settings, folderItems);
+            OnCompareAssets(settings, folderItems, entriesByAssetFilepath);
 
             mainTreeView.SetRootItems(folderItems);
             mainTreeView.ExpandAll();
@@ -299,10 +305,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         deduplicateButton.clicked += OnDeduplicateAssets;
     }
 
-    private AddressablesAssetStore BuildAddressablesAssetStore()
+    private AddressablesAssetStore BuildAddressablesAssetStore(AddressableAssetSettings settings)
     {
-        var settings = AddressableAssetSettingsDefaultObject.Settings;
-
         if (settings == null)
         {
             return null;
@@ -418,15 +422,15 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         return folderItem;
     }
 
-    private void OnProcessAllAssets(List<TreeViewItemData<ProcessingState>> folderItems)
+    private void OnProcessAllAssets(AddressableAssetSettings settings, List<TreeViewItemData<ProcessingState>> folderItems)
     {
         for (int i = 0; i < folderItems.Count; ++i)
         {
-            folderItems[i] = OnProcessFolderAssets(folderItems[i]);
+            folderItems[i] = OnProcessFolderAssets(settings, folderItems[i]);
         }
     }
 
-    private TreeViewItemData<ProcessingState> OnProcessFolderAssets(TreeViewItemData<ProcessingState> folderItem)
+    private TreeViewItemData<ProcessingState> OnProcessFolderAssets(AddressableAssetSettings settings, TreeViewItemData<ProcessingState> folderItem)
     {
         if (folderItem.data is not FolderCollectionAndProcessingState folderState)
         {
@@ -438,43 +442,43 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             return folderItem;
         }
 
-        ProcessAssets(folderState);
+        ProcessAssets(settings, folderState);
 
         return folderItem;
     }
 
-    private void OnCollectAndProcessAllAssets(List<TreeViewItemData<ProcessingState>> folderItems)
+    private void OnCollectAndProcessAllAssets(AddressableAssetSettings settings, List<TreeViewItemData<ProcessingState>> folderItems)
     {
         OnCollectAllAssets(folderItems);
 
-        OnProcessAllAssets(folderItems);
+        OnProcessAllAssets(settings, folderItems);
     }
 
-    private void OnCollectAndProcessFolderAssets(TreeViewItemData<ProcessingState> folderItem)
+    private void OnCollectAndProcessFolderAssets(AddressableAssetSettings settings, TreeViewItemData<ProcessingState> folderItem)
     {
         OnCollectFolderAssets(folderItem);
 
-        OnProcessFolderAssets(folderItem);
+        OnProcessFolderAssets(settings, folderItem);
     }
     #endregion
 
     #region Compare States for UI
-    private void OnCompareAssets(List<TreeViewItemData<ProcessingState>> folderItems, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void OnCompareAssets(AddressableAssetSettings settings, List<TreeViewItemData<ProcessingState>> folderItems, Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         for (int i = 0; i < folderItems.Count; ++i)
         {
-            OnCompareFolderAssets(folderItems[i], entriesByAssetpath);
+            OnCompareFolderAssets(settings, folderItems[i], entriesByAssetpath);
         }
     }
 
-    private void OnCompareFolderAssets(TreeViewItemData<ProcessingState> folderItem, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void OnCompareFolderAssets(AddressableAssetSettings settings, TreeViewItemData<ProcessingState> folderItem, Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         if (folderItem.data is not FolderCollectionAndProcessingState folderState)
         {
             return;
         }
 
-        CompareAssets(folderState, entriesByAssetpath);
+        CompareAssets(settings, folderState, entriesByAssetpath);
     }
     #endregion
 
@@ -512,14 +516,12 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         }
     }
 
-    private static void ProcessAssets(FolderCollectionAndProcessingState folderState)
+    private static void ProcessAssets(AddressableAssetSettings settings, FolderCollectionAndProcessingState folderState)
     {
         if (!folderState.enabled)
         {
             return;
         }
-
-        var settings = AddressableAssetSettingsDefaultObject.Settings;
 
         if (settings == null)
         {
@@ -547,7 +549,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             assetState.assetApplicator);
     }
 
-    private void CollectAndProcessAssets(List<ProcessingState> folderStates)
+    private void CollectAndProcessAssets(AddressableAssetSettings settings, List<ProcessingState> folderStates)
     {
         foreach (FolderCollectionAndProcessingState folderState in folderStates)
         {
@@ -556,21 +558,21 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         foreach (FolderCollectionAndProcessingState folderState in folderStates)
         {
-            ProcessAssets(folderState);
+            ProcessAssets(settings, folderState);
         }
     }
     #endregion
 
     #region Compare States
-    private void CompareAssets(List<ProcessingState> folderStates, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void CompareAssets(AddressableAssetSettings settings, List<ProcessingState> folderStates, Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         foreach (FolderCollectionAndProcessingState folderState in folderStates)
         {
-            CompareAssets(folderState, entriesByAssetpath);
+            CompareAssets(settings, folderState, entriesByAssetpath);
         }
     }
 
-    private void CompareAssets(FolderCollectionAndProcessingState folderState, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void CompareAssets(AddressableAssetSettings settings, FolderCollectionAndProcessingState folderState, Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         if(folderState.assetApplicator is not CombinedAssetApplicator combinedAssetApplicator)
         {
@@ -579,11 +581,11 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         foreach (AssetCollectionAndProcessingState assetState in folderState.assetStates)
         {
-            CompareAsset(combinedAssetApplicator, assetState.path, entriesByAssetpath);
+            CompareAsset(settings, combinedAssetApplicator, assetState.path, entriesByAssetpath);
         }
     }
 
-    private void CompareAsset(CombinedAssetApplicator combinedAssetApplicator, string assetFilePath, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void CompareAsset(AddressableAssetSettings settings, CombinedAssetApplicator combinedAssetApplicator, string assetFilePath, Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         if (entriesByAssetpath.TryGetValue(assetFilePath, out ComparisonEntry comparisonEntry))
         {
@@ -591,7 +593,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             return;
         }
 
-        comparisonEntry = ComparisonEntries.CreateEntry(combinedAssetApplicator, assetFilePath);
+        comparisonEntry = ComparisonEntries.CreateEntry(settings, combinedAssetApplicator, assetFilePath);
         entriesByAssetpath.Add(assetFilePath, comparisonEntry);
     }
     #endregion

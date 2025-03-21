@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -7,12 +8,57 @@ using USP.AddressablesAssetProcessing;
 [UxmlElement("ComparisonEntryTreeView")]
 public partial class ComparisonEntryTreeView : MultiColumnTreeView
 {
+    #region Static Methods
+    private static StyleLength Add(StyleLength leftHand, StyleLength rightHand)
+    {
+        Length length = Add(leftHand.value, rightHand.value);
+
+        return new StyleLength(length);
+    }
+
+    private static Length Add(Length leftHand, Length rightHand)
+    {
+        if (leftHand.unit != rightHand.unit)
+        {
+            Debug.LogError("Attempting to add Lengths where units do not match.");
+
+            return Length.None();
+        }
+
+        float leftValue = leftHand.value;
+        float rightValue = rightHand.value;
+
+        return new Length(leftValue + rightValue, leftHand.unit);
+    }
+    #endregion
+
     #region Fields
     private readonly VisualTreeAsset comparisonEntryTreeViewUxml;
 
     private readonly StyleSheet compareOperandUss;
 
     private readonly VisualTreeAsset compareOperandUxml;
+
+    private IList<TreeViewItemData<ComparisonEntry>> _itemsSource;
+    #endregion
+
+    #region Properties
+    public new IList<TreeViewItemData<ComparisonEntry>> itemsSource
+    {
+        get
+        {
+            return _itemsSource;
+        }
+        set
+        {
+            _itemsSource = value;
+            base.SetRootItems(value);
+        }
+    }
+    #endregion
+
+    #region Events
+    public event System.Action changed;
     #endregion
 
     #region Methods
@@ -21,16 +67,12 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
         comparisonEntryTreeViewUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\ComparisonEntryTreeView.uxml");
         compareOperandUss = Helper.LoadRequired<StyleSheet>("StyleSheet\\CompareOperand.uss");
         compareOperandUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\CompareOperand.uxml");
+        reorderable = false;
     }
 
     public virtual void SetRootItems(IList<TreeViewItemData<ComparisonEntry>> rootItems)
     {
-        base.SetRootItems(rootItems);
-    }
-
-    public virtual bool HasValidDataAndBindings()
-    {
-        return viewController != null && itemsSource != null;
+        itemsSource = rootItems;
     }
 
     public new void Rebuild()
@@ -44,10 +86,15 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
         comparisonEntryTreeViewUxml.CloneTree(temp);
         var templateTreeView = temp.Q<MultiColumnTreeView>();
 
-        // Using Columns.Add will remove the item from the original parent,
-        // so we essentially pop it off like a queue. 
-        while (templateTreeView.columns.Count != 0)
+        // Peek into the first item.
+        ComparisonEntry firstTopEntry = GetItemDataForIndex<ComparisonEntry>(0);
+
+        // Make sure that the current columns have matched size already.
+        var columnsCount = firstTopEntry.compareTargets.Count + firstTopEntry.compareOperations.Count;
+        while (columns.Count < columnsCount)
         {
+            // Using Columns.Add will remove the item from the original parent,
+            // so we essentially pop it off like a queue.
             var templateColumn = templateTreeView.columns[0];
             string name = templateColumn.name;
 
@@ -59,12 +106,6 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
                 columns.Add(column);
             }
         }
-
-        // Peek into the first item.
-        ComparisonEntry firstTopEntry = GetItemDataForIndex<ComparisonEntry>(0);
-
-        var columnsCount = firstTopEntry.compareTargets.Count + firstTopEntry.compareOperations.Count;
-        Debug.Assert(columns.Count == columnsCount);
 
         foreach (string compareTarget in firstTopEntry.compareTargets.Keys)
         {
@@ -96,7 +137,7 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
             }
 
             ComparisonEntry entry = GetItemDataForIndex<ComparisonEntry>(index);
-            object value = entry.compareTargets[name].value;
+            object value = entry.compareTargets[name].Value;
             string textValue = value != null ? value.ToString() : "No Entry";
 
             textField.label = entry.entryName;
@@ -109,6 +150,36 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
         //↔→
 
         Column column = columns[name];
+
+        // Peek into the first item.
+        ComparisonEntry firstTopEntry = GetItemDataForIndex<ComparisonEntry>(0);
+
+        // Get the comparison operation.
+        CompareOperation operation = firstTopEntry.compareOperations[name];
+
+        // The top level comparison will tell us if any of the entries within it are not a match.
+        // If the items are not a match, then we want to provide user with options.
+        float width = 0;
+        if (!operation.result)
+        {
+            if (!operation.leftHand.IsReadonly)
+            {
+                width += 60;
+            }
+            if (!operation.rightHand.IsReadonly)
+            {
+                width += 60;
+            }
+
+            width = Mathf.Max(60, width);
+        }
+        else
+        {
+            width = Mathf.Max(60, column.minWidth.value);
+        }
+        
+        column.minWidth = column.width = width;
+
         column.makeCell = () =>
         {
             var result = new VisualElement();
@@ -132,18 +203,14 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
                 differentLabel.style.display = DisplayStyle.None;
                 differentButtons.style.display = DisplayStyle.None;
 
-                element.style.width = sameLabel.style.width;
-
                 return;
             }
 
-            if (operation.leftHand.isReadonly && operation.rightHand.isReadonly)
+            if (operation.leftHand.IsReadonly && operation.rightHand.IsReadonly)
             {
                 sameLabel.style.display = DisplayStyle.None;
                 differentLabel.style.display = DisplayStyle.Flex;
                 differentButtons.style.display = DisplayStyle.None;
-
-                element.style.width = differentLabel.style.width;
 
                 return;
             }
@@ -154,29 +221,41 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
 
             var copyLeftButton = element.Q<Button>("copy-left-button");
 
-            //element.style.width = 0;
-            if (operation.leftHand.isReadonly)
+            if (operation.leftHand.IsReadonly)
             {
                 copyLeftButton.style.display = DisplayStyle.None;
             }
             else
             {
-                //element.width.value += copyLeftButton.style.width.value;
-                //copyLeftButton.clicked =
+                copyLeftButton.clicked += () =>
+                {
+                    Copy(operation.rightHand, operation.leftHand);
+                };
+                copyLeftButton.clicked += changed;
             }
 
             var copyRightButton = element.Q<Button>("copy-right-button");
 
-            if (operation.rightHand.isReadonly)
+            if (operation.rightHand.IsReadonly)
             {
                 copyRightButton.style.display = DisplayStyle.None;
             }
             else
             {
-                //element.width.value += copyRightButton.style.width.value;
-                //copyRightButton.clicked =
+                copyRightButton.clicked += () =>
+                {
+                    Copy(operation.leftHand, operation.rightHand);
+                };
+                copyRightButton.clicked += changed;
             }
         };
+    }
+
+    private void Copy(CompareOperand source, CompareOperand destination)
+    {
+        ComparisonEntry firstTopEntry = GetItemDataForIndex<ComparisonEntry>(0);
+
+        destination.Value = source.Value;
     }
     #endregion
 }

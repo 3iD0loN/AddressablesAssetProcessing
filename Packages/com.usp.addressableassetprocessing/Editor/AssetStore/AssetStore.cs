@@ -65,7 +65,7 @@ namespace USP.AddressablesAssetProcessing
                 }
             }
 
-            dataByAssetPath.Add(assetFilePath, userData);
+            dataByAssetPath[assetFilePath] = userData;
         }
 
         public virtual void AddGlobalLabels(HashSet<string> labels)

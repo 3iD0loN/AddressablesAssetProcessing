@@ -7,21 +7,91 @@ using System.Reflection;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using UnityEditor.AddressableAssets.Settings;
+    using UnityEditorInternal;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
+    using IData = IDictionary<string, USP.MetaAddressables.MetaAddressables.UserData>;
+    using IReadOnlyData = IReadOnlyDictionary<string, USP.MetaAddressables.MetaAddressables.UserData>;
 #endif
+
+    public class X
+    {
+        public readonly IAssetApplicator AssetApplicator;
+
+        public readonly AddressableAssetSettings Settings;
+
+        public readonly string AssetFilePath;
+
+        public X(IAssetApplicator assetApplicator, AddressableAssetSettings settings, string assetFilePath)
+        {
+            this.AssetApplicator = assetApplicator;
+            this.Settings = settings;
+            this.AssetFilePath = assetFilePath;
+        }
+
+        public void Reapply()
+        {
+            bool found = AssetApplicator.AssetStore.DataByAssetPath.TryGetValue(AssetFilePath, out MetaAddressables.UserData userData);
+
+            if (!found)
+            {
+                throw new Exception("This should not be happening, ever.");
+            }
+
+            AssetApplicator.ApplyAsset(Settings, userData);
+        }
+    }
 
     public class CompareOperand
     {
-        public object value;
+        #region Fields
+        public object parentValue;
 
-        public bool isReadonly;
+        public Func<object, object> getter;
 
-        public CompareOperand(object value, bool isReadonly = false)
+        public Action<object, object> setter;
+
+        public X x;
+        #endregion
+
+        #region Properties
+        public bool IsReadonly => setter == null;
+
+        public object Value
         {
-            this.value = value;
-            this.isReadonly = isReadonly;
+            get
+            {
+                if (this.parentValue == null)
+                {
+                    return null;
+                }
+
+                return getter?.Invoke(this.parentValue);
+            }
+            set
+            {
+                if (this.parentValue == null)
+                {
+                    return;
+                }
+
+                setter?.Invoke(this.parentValue, value);
+
+                x.Reapply();
+            }
         }
+        #endregion
+
+        #region Methods
+        public CompareOperand(X x, object parentValue, Func<object, object> getter, Action<object, object> setter = null)
+        {
+            this.x = x;
+            this.parentValue = parentValue;
+            this.getter = getter;
+            this.setter = setter;
+        }
+        #endregion
     }
 
     public struct CompareOperation
@@ -45,8 +115,8 @@ namespace USP.AddressablesAssetProcessing
 
         public static bool Operate(CompareOperation operation)
         {
-            var leftHash = operation.leftHand.value != null ? operation.comparer.GetHashCode(operation.leftHand.value) : 0;
-            var rightHash = operation.rightHand.value != null ? operation.comparer.GetHashCode(operation.rightHand.value) : 0;
+            var leftHash = operation.leftHand.Value != null ? operation.comparer.GetHashCode(operation.leftHand.Value) : 0;
+            var rightHash = operation.rightHand.Value != null ? operation.comparer.GetHashCode(operation.rightHand.Value) : 0;
 
             return leftHash == rightHash;
         }
@@ -77,18 +147,13 @@ namespace USP.AddressablesAssetProcessing
 
         private static UserDataComparer userDataComparer = new UserDataComparer();
 
-        public static ComparisonEntry CreateEntry(CombinedAssetApplicator combinedAssetApplicator, string assetFilePath)
+        public static ComparisonEntry CreateEntry(AddressableAssetSettings settings, CombinedAssetApplicator combinedAssetApplicator, string assetFilePath)
         {
             var properties = new Dictionary<string, CompareOperand>(3);
             
-            combinedAssetApplicator.SimulatedAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData processingData);
-            properties[ProcessingDataKey] = new CompareOperand(processingData, combinedAssetApplicator.SimulatedAssetStore.IsReadOnly);
-
-            combinedAssetApplicator.MetaAddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData metafileData);
-            properties[MetafileDataKey] = new CompareOperand(metafileData, combinedAssetApplicator.MetaAddressablesAssetStore.IsReadOnly);
-
-            combinedAssetApplicator.AddressablesAssetStore.DataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData addressablesData);
-            properties[AddressablesDataKey] = new CompareOperand(addressablesData, combinedAssetApplicator.AddressablesAssetStore.IsReadOnly);
+            properties[ProcessingDataKey] = CreateTarget(combinedAssetApplicator.SimulatedAssetApplicator, settings, assetFilePath);
+            properties[MetafileDataKey] = CreateTarget(combinedAssetApplicator.MetaAddressablesAssetApplicator, settings, assetFilePath);
+            properties[AddressablesDataKey] = CreateTarget(combinedAssetApplicator.AddressablesAssetApplicator, settings, assetFilePath);
 
             var result = new ComparisonEntry();
             result.comparer = userDataComparer;
@@ -99,6 +164,35 @@ namespace USP.AddressablesAssetProcessing
             result.children = PopulateChildren(result.entryType, result.comparer, result.compareTargets);
 
             return result;
+        }
+
+        private static CompareOperand CreateTarget(IAssetApplicator assetApplicator, AddressableAssetSettings settings, string assetFilePath)
+        {
+            if (assetApplicator.AssetStore.DataByAssetPath is not IData dataByAssetPath)
+            {
+                return new CompareOperand(null, null, null);
+            }
+
+            var x = new X(assetApplicator, settings, assetFilePath);
+
+            Func<object, object> getter = target => Get(target as IReadOnlyData, assetFilePath);
+
+            Action<object, object> setter = !assetApplicator.AssetStore.IsReadOnly ?
+                (target, value) => Set(target as IData, assetFilePath, value as MetaAddressables.UserData): null;
+
+            return new CompareOperand(x, dataByAssetPath, getter, setter);
+        }
+
+        private static MetaAddressables.UserData Get(IReadOnlyData dataByAssetPath, string assetFilePath)
+        {
+            dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
+
+            return userData;
+        }
+
+        private static void Set(IData dataByAssetPath, string assetFilePath, MetaAddressables.UserData userData)
+        {
+            dataByAssetPath[assetFilePath] = userData;
         }
 
         private static IReadOnlyDictionary<string, CompareOperation> PopulateCompare(
@@ -157,7 +251,7 @@ namespace USP.AddressablesAssetProcessing
                     foreach ((string key, CompareOperand parentOperand) in compareTargets)
                     {
                         // If the current object that is being compared is not an enumerable container, then:
-                        if (parentOperand.value is not IEnumerable enumerable)
+                        if (parentOperand.Value is not IEnumerable enumerable)
                         {
                             // Skip this item.
                             continue;
@@ -194,31 +288,6 @@ namespace USP.AddressablesAssetProcessing
                     }
 
                     comparerChildren = propertyComparerByHash.Values;
-
-                    /*/
-                    UnityEngine.Debug.Log("0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0-0");
-
-                    foreach (PropertyComparerPair comparerChild in comparerChildren)
-                    {
-                        var properties = new Dictionary<string, CompareOperand>(compareTargets.Count);
-                        foreach ((string key, CompareOperand parentOperand) in compareTargets)
-                        {
-                            if (parentOperand == null)
-                            {
-                                continue;
-                            }
-
-                            object childValue = (parentOperand.value != null) ? comparerChild.Access(parentOperand.value) : null;
-
-                            var childOperand = new CompareOperand(childValue, parentOperand.isReadonly);
-                            properties.Add(key, childOperand);
-                        }
-                    }
-
-                    UnityEngine.Debug.Log("1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1-1");
-                    
-                    return null;
-                    //*/
                 }
                 else
                 {
@@ -230,6 +299,20 @@ namespace USP.AddressablesAssetProcessing
             int i = 0;
             foreach (PropertyComparerPair comparerChild in comparerChildren)
             {
+                var propertyInfo = comparerChild.GetMemberInfo<PropertyInfo>();
+                Func<object, object> propertyGetter = null;
+                if (propertyInfo != null)
+                {
+                    propertyGetter = propertyInfo.GetValue;
+                }
+                else
+                {
+                    Delegate getter = comparerChild.Item1.Compile();
+                    propertyGetter = target => getter.DynamicInvoke(target); 
+                }
+
+                Action<object, object> propertySetter = propertyInfo != null ? propertyInfo.SetValue : null;
+
                 var properties = new Dictionary<string, CompareOperand>(compareTargets.Count);
                 foreach ((string key, CompareOperand parentOperand) in compareTargets)
                 {
@@ -238,19 +321,17 @@ namespace USP.AddressablesAssetProcessing
                         continue;
                     }
 
-                    object childValue = (parentOperand.value != null) ? comparerChild.Access(parentOperand.value) : null;
+                    Action<object, object> targetPropertySetter = !parentOperand.IsReadonly ? propertySetter : null;
 
-                    var childOperand = new CompareOperand(childValue, parentOperand.isReadonly);
+                    var childOperand = new CompareOperand(parentOperand.x, parentOperand.Value, propertyGetter, targetPropertySetter);
                     properties.Add(key, childOperand);
                 }
 
                 // The first item should exist along with at least one other to compare against.
                 // It should be available to compare against all other items, which are alike enough to compare.
                 // Therefore, there is at least one and it would be reasonable have the same type.
-                CompareOperand firstOperand = properties.First(pair => pair.Value.value != null).Value;
-                object firstValue = firstOperand.value;
-
-                var propertyInfo = comparerChild.GetMemberInfo<PropertyInfo>();
+                CompareOperand firstOperand = properties.First(pair => pair.Value.Value != null).Value;
+                object firstValue = firstOperand.Value;                
 
                 // If the first value is valid, then use the concrete type, since a property, field, or method
                 // can obscure the type of an inherited item. Otherwise, fallback to using the property type.  
