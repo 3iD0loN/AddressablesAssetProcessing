@@ -5,6 +5,7 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using UnityEditorInternal;
     using USP.MetaAddressables;
 
     public class AddressablesAssetApplicator : IAssetApplicator<AddressablesAssetStore>
@@ -28,12 +29,17 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Fields
-        public AddressablesAssetStore AssetStore { get; } = new AddressablesAssetStore();
+        public AddressablesAssetStore AssetStore { get; }
 
         IAssetStore IAssetApplicator.AssetStore => AssetStore;
         #endregion
 
         #region Methods
+        public AddressablesAssetApplicator(AddressablesAssetStore assetStore = null)
+        {
+            AssetStore = assetStore ?? new AddressablesAssetStore();
+        }
+
         public void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
             AddressableAssetGroupTemplate groupTemplate,

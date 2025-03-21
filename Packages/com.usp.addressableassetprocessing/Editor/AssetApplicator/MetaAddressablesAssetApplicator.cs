@@ -51,12 +51,17 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Properties
-        public MetaAddressablesAssetStore AssetStore { get; } = new MetaAddressablesAssetStore();
+        public MetaAddressablesAssetStore AssetStore { get; }
 
         IAssetStore IAssetApplicator.AssetStore => AssetStore;
         #endregion
 
         #region Methods
+        public MetaAddressablesAssetApplicator(MetaAddressablesAssetStore assetStore = null)
+        {
+            AssetStore = assetStore ?? new MetaAddressablesAssetStore();
+        }
+
         public void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
             AddressableAssetGroupTemplate group,
