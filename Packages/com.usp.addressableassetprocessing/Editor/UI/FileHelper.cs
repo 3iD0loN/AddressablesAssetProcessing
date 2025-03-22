@@ -8,7 +8,7 @@ public static class FileHelper
 {
     public static T Load<T>(string assetPath) where T : Object
     {
-        const string WindowfilePath = "Packages\\com.usp.addressableassetprocessing\\Editor\\";
+        const string WindowfilePath = "Packages\\com.usp.addressableassetprocessing\\Editor\\UI\\";
 
         return AssetDatabase.LoadAssetAtPath<T>(WindowfilePath + assetPath);
     }
