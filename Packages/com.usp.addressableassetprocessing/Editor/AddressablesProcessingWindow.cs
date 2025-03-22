@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 
-using UnityEngine;
 using UnityEngine.UIElements;
 
 using UnityEditor;
@@ -9,31 +8,6 @@ using UnityEditor.AddressableAssets.Settings;
 
 using USP.AddressablesAssetProcessing;
 using USP.MetaAddressables;
-
-using Object = UnityEngine.Object;
-using UnityEditor.AddressableAssets.Build;
-
-public static class Helper
-{
-    public static T Load<T>(string assetPath) where T : Object
-    {
-        const string WindowfilePath = "Packages\\com.usp.addressableassetprocessing\\Editor\\";
-
-        return AssetDatabase.LoadAssetAtPath<T>(WindowfilePath + assetPath);
-    }
-
-    public static T LoadRequired<T>(string assetPath) where T : Object
-    {
-        T result = Load<T>(assetPath);
-
-        if (!result)
-        {
-            Debug.LogError($"Unable to find required resource '{assetPath}'");
-        }
-
-        return result;
-    }
-}
 
 public abstract class AddressablesProcessingWindow : EditorWindow
 {
@@ -115,13 +89,13 @@ public abstract class AddressablesProcessingWindow : EditorWindow
     #region Methods
     private void CreateGUI()
     {
-        var windowUss = Helper.LoadRequired<StyleSheet>("StyleSheet\\Window.uss");
+        var windowUss = FileHelper.LoadRequired<StyleSheet>("StyleSheet\\Window.uss");
         rootVisualElement.styleSheets.Add(windowUss);
 
-        var windowUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\Window.uxml");
+        var windowUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\Window.uxml");
         windowUxml.CloneTree(rootVisualElement);
 
-        var assetStateUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
+        var assetStateUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
 
         VisualElement globalState = rootVisualElement.Q<VisualElement>("global-settings");
         CreateGlobalStateGUI(globalState);

@@ -63,9 +63,9 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
     #region Methods
     public ComparisonEntryTreeView()
     {
-        comparisonEntryTreeViewUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\ComparisonEntryTreeView.uxml");
-        compareOperandUss = Helper.LoadRequired<StyleSheet>("StyleSheet\\CompareOperand.uss");
-        compareOperandUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\CompareOperand.uxml");
+        comparisonEntryTreeViewUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\ComparisonEntryTreeView.uxml");
+        compareOperandUss = FileHelper.LoadRequired<StyleSheet>("StyleSheet\\CompareOperand.uss");
+        compareOperandUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\CompareOperand.uxml");
         reorderable = false;
     }
 

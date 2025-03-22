@@ -26,7 +26,7 @@ public partial class FocusActions : VisualElement
     #region Methods
     public FocusActions()
     {
-        focusActionsUxml = Helper.LoadRequired<VisualTreeAsset>("UXML\\FocusActions.uxml");
+        focusActionsUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\FocusActions.uxml");
         //focusActionsUss = Helper.LoadRequired<StyleSheet>("StyleSheet\\CompareOperand.uss");
     }
 
@@ -269,7 +269,8 @@ public partial class FocusActions : VisualElement
     #endregion
 
     #region Compare States
-    private void CompareAssets(AddressableAssetSettings settings, List<ProcessingState> folderStates, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void CompareAssets(AddressableAssetSettings settings, List<ProcessingState> folderStates,
+        Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         foreach (FolderCollectionAndProcessingState folderState in folderStates)
         {
@@ -277,7 +278,8 @@ public partial class FocusActions : VisualElement
         }
     }
 
-    private void CompareAssets(AddressableAssetSettings settings, FolderCollectionAndProcessingState folderState, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void CompareAssets(AddressableAssetSettings settings, FolderCollectionAndProcessingState folderState,
+        Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         if (folderState.assetApplicator is not CombinedAssetApplicator combinedAssetApplicator)
         {
@@ -290,7 +292,8 @@ public partial class FocusActions : VisualElement
         }
     }
 
-    private void CompareAsset(AddressableAssetSettings settings, CombinedAssetApplicator combinedAssetApplicator, string assetFilePath, Dictionary<string, ComparisonEntry> entriesByAssetpath)
+    private void CompareAsset(AddressableAssetSettings settings, CombinedAssetApplicator combinedAssetApplicator, string assetFilePath,
+        Dictionary<string, ComparisonEntry> entriesByAssetpath)
     {
         if (entriesByAssetpath.TryGetValue(assetFilePath, out ComparisonEntry comparisonEntry))
         {
