@@ -32,13 +32,12 @@ public partial class FocusActions : VisualElement
 
     public void Rebuild()
     {
-        var temp = new VisualElement();
         focusActionsUxml.CloneTree(this);
-        //temp.styleSheets.Add(focusActionsUss);
+        //this.styleSheets.Add(focusActionsUss);
 
-        var collectTargetButton = this.Q<Button>("collect-all-button");
-        var processTargetButton = this.Q<Button>("process-all-button");
-        var collectAndProcessTargetButton = this.Q<Button>("collect-and-process-all-button");
+        var collectTargetButton = this.Q<Button>("collect-button");
+        var processTargetButton = this.Q<Button>("process-button");
+        var collectAndProcessTargetButton = this.Q<Button>("collect-and-process-button");
 
         collectTargetButton.clicked += () =>
         {
@@ -77,15 +76,25 @@ public partial class FocusActions : VisualElement
             {
                 collectedCount += processingState.assetStates.Count;
             }
+            else if (dataItem.data is AssetCollectionAndProcessingState)
+            {
+                // Count up this one asset.
+                collectedCount++;
+            }
 
             processedCount += dataItem.data.assetApplicator.AssetStore.DataByAssetPath.Count;
         }
 
-        collectTargetButton.SetEnabled(collectedCount == 0);
-        processTargetButton.SetEnabled(collectedCount != 0 && processedCount == 0);
-        collectAndProcessTargetButton.SetEnabled(processedCount == 0);
+        collectTargetButton.style.display = Show(collectedCount == 0);
+        processTargetButton.style.display = Show(collectedCount != 0 && processedCount == 0);
+        collectAndProcessTargetButton.style.display = Show(collectedCount == 0);
 
         changed?.Invoke(dataSource.Item2, collectedCount, processedCount);
+    }
+
+    private DisplayStyle Show(bool value)
+    {
+        return value ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
     #region Collection and Processing States for UI
