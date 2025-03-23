@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Codice.CM.Common;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -8,6 +9,29 @@ using USP.AddressablesAssetProcessing;
 public partial class ComparisonEntryTreeView : MultiColumnTreeView
 {
     #region Static Methods
+    public static List<TreeViewItemData<ComparisonEntry>> Pack(IEnumerable<ComparisonEntry> comparisonEntries)
+    {
+        var result = new List<TreeViewItemData<ComparisonEntry>>();
+        foreach (var comparisonEntry in comparisonEntries)
+        {
+            var item = Pack(comparisonEntry);
+            result.Add(item);
+        }
+
+        return result;
+    }
+
+    public static TreeViewItemData<ComparisonEntry> Pack(ComparisonEntry comparisonEntry)
+    {
+        List<TreeViewItemData<ComparisonEntry>> childItems = null;
+        if (comparisonEntry.children != null)
+        {
+            childItems = Pack(comparisonEntry.children);
+        }
+
+        return new TreeViewItemData<ComparisonEntry>(comparisonEntry.GetHashCode(), comparisonEntry, childItems);
+    }
+
     private static StyleLength Add(StyleLength leftHand, StyleLength rightHand)
     {
         Length length = Add(leftHand.value, rightHand.value);

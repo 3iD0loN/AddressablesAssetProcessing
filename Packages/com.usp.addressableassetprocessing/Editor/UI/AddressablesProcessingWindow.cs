@@ -8,47 +8,10 @@ using UnityEditor.AddressableAssets.Settings;
 
 using USP.AddressablesAssetProcessing;
 using USP.MetaAddressables;
+using System.Linq;
 
 public abstract class AddressablesProcessingWindow : EditorWindow
 {
-    #region Types
-    public class ProcessingState
-    {
-        public bool enabled = true;
-
-        public string name;
-
-        public IExtractor<string, AddressableAssetGroupTemplate> groupExtractor;
-
-        public IExtractor<string, string> addressExtractor;
-
-        public IExtractor<string, HashSet<string>> labelExtractor;
-
-        public IAssetApplicator assetApplicator;
-    }
-
-    public class CollectionAndProcessingState : ProcessingState
-    {
-        public string path
-        {
-            get => name;
-            set => name = value;
-        }
-
-        public AssetPathCollector assetpathCollector;
-    }
-
-    public class AssetCollectionAndProcessingState : CollectionAndProcessingState
-    {
-        public string assetGuid;
-    }
-
-    public class FolderCollectionAndProcessingState : CollectionAndProcessingState
-    {
-        public List<AssetCollectionAndProcessingState> assetStates = new List<AssetCollectionAndProcessingState>();
-    }
-    #endregion
-
     #region Static Methods
     #region Addressables Event Subscription
     [InitializeOnLoadMethod]
@@ -95,23 +58,20 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         var windowUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\Window.uxml");
         windowUxml.CloneTree(rootVisualElement);
 
-        var assetStateUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
-
         VisualElement globalState = rootVisualElement.Q<VisualElement>("global-settings");
         CreateGlobalStateGUI(globalState);
 
         var settings = AddressableAssetSettingsDefaultObject.Settings;
         AddressablesAssetStore addressablesAssetStore = BuildAddressablesAssetStore(settings);
-        List<ProcessingState> folderStates = BuildStates(addressablesAssetStore);
-
-        var entriesByAssetFilepath = new Dictionary<string, ComparisonEntry>();
-        var folderItems = new List<TreeViewItemData<ProcessingState>>();
-        Pack(folderStates, folderItems);
-
+        List<Folder> folders = BuildFolderStates(addressablesAssetStore);
+        
         MultiColumnTreeView mainTreeView = rootVisualElement.Q<MultiColumnTreeView>("main-tree-view");
+        List<TreeViewItemData<Asset>> folderItems = FocusActions.Pack(folders);
         mainTreeView.SetRootItems(folderItems);
+        mainTreeView.ExpandAll();
 
-        /*/
+        var assetStateUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
+
         Column enabledColumn = mainTreeView.columns["enabled"];
         enabledColumn.makeCell = () => new Toggle();
         enabledColumn.bindCell = (VisualElement element, int index) =>
@@ -121,12 +81,11 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 return;
             }
 
-            var state = (TreeViewItemData<ProcessingState>)mainTreeView.itemsSource[index];
+            var state = mainTreeView.GetItemDataForIndex<Asset>(index);
 
-            Debug.Log("xxx");
-            //toggle.value = state.enabled;
+            toggle.value = state.IsEnabled;
+            toggle.RegisterCallback<ChangeEvent<bool>>(@event => state.IsEnabled = @event.newValue);
         };
-        //*/
 
         Column pathColumn = mainTreeView.columns["path"];
         pathColumn.makeCell = () => new Label();
@@ -137,9 +96,9 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 return;
             }
 
-            var state = mainTreeView.GetItemDataForIndex<ProcessingState>(index);
+            var state = mainTreeView.GetItemDataForIndex<Asset>(index);
 
-            label.text = state.name;
+            label.text = state.Id;
         };
 
         var deduplicateButton = rootVisualElement.Q<Button>("deduplicate-all-button");
@@ -152,47 +111,49 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             selectedState.Clear();
             assetStateUxml.CloneTree(selectedState);
 
-            IEnumerable<TreeViewItemData<ProcessingState>> selectedItems = mainTreeView.GetSelectedItems<ProcessingState>();
+            IEnumerable<TreeViewItemData<Asset>> selectedItems = mainTreeView.GetSelectedItems<Asset>();
 
-            FocusActions focusActions = selectedState.Q<FocusActions>("focus-actions");
-            focusActions.dataSource = (settings, new List<TreeViewItemData<ProcessingState>>(selectedItems));
-            focusActions.changed += (IEnumerable<TreeViewItemData<ProcessingState>> selectedItems, int collectedCount, int processedCount) =>
+            ComparisonEntryTreeView comparisonEntryTreeView = selectedState.Q<ComparisonEntryTreeView>("comparison-entry");
+            System.Action updateComparisonEntryTreeView = () =>
             {
-                mainTreeView.SetRootItems(folderItems);
-
-                foreach (TreeViewItemData<ProcessingState> selectedItem in selectedItems)
+                var comparisonEntries = new HashSet<ComparisonEntry>();
+                foreach (TreeViewItemData<Asset> selectedItem in selectedItems)
                 {
-                    mainTreeView.ExpandItem(selectedItem.id, true);
+                    if (selectedItem.data.ComparisonEntries == null)
+                    {
+                        continue;
+                    }
+
+                    comparisonEntries.UnionWith(selectedItem.data.ComparisonEntries);
                 }
 
+                List<TreeViewItemData<ComparisonEntry>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries);
+                comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
+                comparisonEntryTreeView.Rebuild();
+                comparisonEntryTreeView.ExpandAll();
+                foreach (TreeViewItemData<ComparisonEntry> comparisonEntryItem in comparisonEntryItems)
+                {
+                    comparisonEntryTreeView.CollapseItem(comparisonEntryItem.id, false);
+                }
+            };
+
+            comparisonEntryTreeView.changed += updateComparisonEntryTreeView;
+            updateComparisonEntryTreeView();
+
+            FocusActions focusActions = selectedState.Q<FocusActions>("focus-actions");
+            focusActions.dataSource = new List<TreeViewItemData<Asset>>(selectedItems);
+            focusActions.changed += (IEnumerable<TreeViewItemData<Asset>> selectedItems, int collectedCount, int processedCount) =>
+            {
+                folderItems = FocusActions.Pack(folders);
+                mainTreeView.SetRootItems(folderItems);
+                mainTreeView.ExpandAll();
                 mainTreeView.Rebuild();
+
+                updateComparisonEntryTreeView();
 
                 deduplicateButton.SetEnabled(collectedCount != 0 && processedCount != 0);
             };
             focusActions.Rebuild();
-
-            /*/
-            ComparisonEntryTreeView comparisonEntryView = selectedState.Q<ComparisonEntryTreeView>("comparison-entry");
-
-            System.Action update = () =>
-            {
-                var comparisonEntries = new List<ComparisonEntry>();
-                foreach (TreeViewItemData<ProcessingState> selectedItem in selectedItems)
-                {
-                    var combinedAssetApplicator = selectedItem.data.assetApplicator as CombinedAssetApplicator;
-                    ComparisonEntry comparisonEntry = ComparisonEntries.CreateEntry(settings, combinedAssetApplicator, assetState.path);
-                    comparisonEntries.Add(comparisonEntry);
-                }
-
-                var comparisonEntryItems = new List<TreeViewItemData<ComparisonEntry>>();
-                Pack(comparisonEntries, comparisonEntryItems);
-                comparisonEntryView.SetRootItems(comparisonEntryItems);
-                comparisonEntryView.Rebuild();
-                comparisonEntryView.ExpandAll();
-            };
-            comparisonEntryView.changed += update;
-            update();
-            //*/
         };
     }
 
@@ -203,84 +164,12 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             return null;
         }
 
-        var result = new AddressablesAssetStore();
-
-        result.AddGlobalLabels(settings);
-
-        foreach (AddressableAssetGroup group in settings.groups)
-        {
-            foreach (AddressableAssetEntry entry in group.entries)
-            {
-                result.AddAsset(entry);
-            }
-        }
-
-        return result;
+        return new AddressablesAssetStore(settings);
     }
 
     protected abstract void CreateGlobalStateGUI(VisualElement globalState);
-
-    #region Pack for UI
-    private void Pack(IEnumerable<ProcessingState> states, List<TreeViewItemData<ProcessingState>> result)
-    {
-        foreach (ProcessingState state in states)
-        {
-            Pack(state, result);
-        }
-    }
-
-    private void Pack(ProcessingState state, List<TreeViewItemData<ProcessingState>> result)
-    {
-        if (state is AssetCollectionAndProcessingState assetState)
-        {
-            Pack(assetState, result);
-        }
-        else if (state is FolderCollectionAndProcessingState folderState)
-        {
-            Pack(folderState, result);
-        }
-    }
-
-    private void Pack(AssetCollectionAndProcessingState assetState, List<TreeViewItemData<ProcessingState>> result)
-    {
-        string guid = assetState.assetGuid;
-
-        result.Add(new TreeViewItemData<ProcessingState>(guid.GetHashCode(), assetState, null));
-    }
-
-    private void Pack(FolderCollectionAndProcessingState folderState, List<TreeViewItemData<ProcessingState>> result)
-    {
-        string guid = AssetDatabase.AssetPathToGUID(folderState.path);
-
-        var childItems = new List<TreeViewItemData<ProcessingState>>();
-        Pack(folderState.assetStates, childItems);
-
-        result.Add(new TreeViewItemData<ProcessingState>(guid.GetHashCode(), folderState, childItems));
-    }
-
-    private void Pack(IEnumerable<ComparisonEntry> comparisonEntries, List<TreeViewItemData<ComparisonEntry>> result)
-    {
-        foreach(var comparisonEntry in comparisonEntries)
-        {
-            Pack(comparisonEntry, result);
-        }
-    }
-
-    private void Pack(ComparisonEntry comparisonEntry, List<TreeViewItemData<ComparisonEntry>> result)
-    {
-
-        var childItems = new List<TreeViewItemData<ComparisonEntry>>();
-        if (comparisonEntry.children != null)
-        {
-            Pack(comparisonEntry.children, childItems);
-        }
-        
-        result.Add(new TreeViewItemData<ComparisonEntry>(comparisonEntry.GetHashCode(), comparisonEntry, childItems));
-    }
-    #endregion
-
     #region BuildStates
-    protected abstract List<ProcessingState> BuildStates(AddressablesAssetStore addressablesAssetStore);
+    protected abstract List<Folder> BuildFolderStates(AddressablesAssetStore addressablesAssetStore);
     #endregion
 
     #region Deduplication

@@ -1,11 +1,9 @@
 using System.Collections.Generic;
 
-using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
-    using UnityEditorInternal;
     using USP.MetaAddressables;
 
     public class AddressablesAssetApplicator : IAssetApplicator<AddressablesAssetStore>
@@ -35,9 +33,14 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Methods
-        public AddressablesAssetApplicator(AddressablesAssetStore assetStore = null)
+        public AddressablesAssetApplicator(AddressableAssetSettings settings) :
+            this(new AddressablesAssetStore(settings))
         {
-            AssetStore = assetStore ?? new AddressablesAssetStore();
+        }
+
+        public AddressablesAssetApplicator(AddressablesAssetStore assetStore)
+        {
+            AssetStore = assetStore;
         }
 
         public void ApplyAsset(AddressableAssetSettings settings,
@@ -46,6 +49,11 @@ namespace USP.AddressablesAssetProcessing
             string address,
             HashSet<string> labels)
         {
+            if (AssetStore.Settings == settings)
+            {
+                return;
+            }
+
             AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, groupTemplate);
             AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, assetFilePath, group, address, labels);
             AssetStore.AddAsset(entry);
@@ -56,6 +64,11 @@ namespace USP.AddressablesAssetProcessing
 
         public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
         {
+            if (AssetStore.Settings == settings)
+            {
+                return;
+            }
+
             AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, userData.Group);
             AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, group, userData.Asset);
             AssetStore.AddAsset(entry);

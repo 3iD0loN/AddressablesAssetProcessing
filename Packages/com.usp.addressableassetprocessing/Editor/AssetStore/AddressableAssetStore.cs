@@ -1,12 +1,9 @@
-using System.Collections.Generic;
-
 using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
     using USP.MetaAddressables;
-    using static Codice.Client.Common.EventTracking.TrackFeatureUseEvent.Features.DesktopGUI.Filters;
 
     public class AddressablesAssetStore : AssetStore
     {
@@ -15,10 +12,26 @@ namespace USP.AddressablesAssetProcessing
         /// A value indicating whether the source of the assets can be written to or not.
         /// </summary>
         public override bool IsReadOnly => false;
+
+        public AddressableAssetSettings Settings { get; }
         #endregion
 
-        #region Methods
-        public virtual void AddAsset(AddressableAssetSettings settings, string assetFilePath)
+        #region 
+        public AddressablesAssetStore(AddressableAssetSettings settings)
+        {
+            Settings = settings;
+
+            AddGlobalLabels();
+
+            foreach (AddressableAssetGroup group in settings.groups)
+            {
+                foreach (AddressableAssetEntry entry in group.entries)
+                {
+                    AddAsset(entry);
+                }
+            }
+        }
+        public virtual void AddAsset(string assetFilePath)
         {
             bool found = dataByAssetPath.TryGetValue(assetFilePath, out MetaAddressables.UserData userData);
 
@@ -32,7 +45,7 @@ namespace USP.AddressablesAssetProcessing
 
             // Attempt to find an Addressable asset entry that is associated with the asset GUID.
             // If there is, then the asset is already Addressable.
-            userData = MetaAddressables.UserData.Create(settings, guid);
+            userData = MetaAddressables.UserData.Create(Settings, guid);
 
             // If the asset is already Addressable, then: 
             if (userData == null)
@@ -60,9 +73,9 @@ namespace USP.AddressablesAssetProcessing
             dataByAssetPath.Add(entry.AssetPath, userData);
         }
 
-        public void AddGlobalLabels(AddressableAssetSettings settings)
+        public void AddGlobalLabels()
         {
-            base.AddGlobalLabels(settings.GetLabels());
+            base.AddGlobalLabels(Settings.GetLabels());
         }
         #endregion
     }

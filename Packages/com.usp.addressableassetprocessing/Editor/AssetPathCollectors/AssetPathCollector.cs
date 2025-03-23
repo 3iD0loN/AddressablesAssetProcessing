@@ -99,7 +99,10 @@ namespace USP.AddressablesAssetProcessing
                     continue;
                 }
 
-                result.Add(guid, file);
+                if (!result.ContainsKey(guid))
+                {
+                    result.Add(guid, file);
+                }
             }
         }
 

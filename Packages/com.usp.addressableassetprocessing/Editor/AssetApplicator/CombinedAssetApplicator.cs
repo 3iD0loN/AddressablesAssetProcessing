@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 
+using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
-    using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
-    using UnityEditor;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
 #endif
@@ -64,8 +63,8 @@ namespace USP.AddressablesAssetProcessing
 #endif
 
             var addressablesAssetStore = AddressablesAssetApplicator.AssetStore;
-            addressablesAssetStore.AddAsset(settings, assetFilePath);
-            addressablesAssetStore.AddGlobalLabels(settings);
+            addressablesAssetStore.AddAsset(assetFilePath);
+            addressablesAssetStore.AddGlobalLabels();
         }
         #endregion
     }

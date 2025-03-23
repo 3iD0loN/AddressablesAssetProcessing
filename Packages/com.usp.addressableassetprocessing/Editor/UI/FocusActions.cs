@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using Unity.IO.LowLevel.Unsafe;
+using UnityEditor;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -9,6 +11,31 @@ using static AddressablesProcessingWindow;
 [UxmlElement("FocusActions")]
 public partial class FocusActions : VisualElement
 {
+    #region Static
+    public static List<TreeViewItemData<Asset>> Pack(IEnumerable<Asset> assets)
+    {
+        var result = new List<TreeViewItemData<Asset>>();
+        foreach (Asset asset in assets)
+        {
+            TreeViewItemData<Asset> item = Pack(asset);
+            result.Add(item);
+        }
+
+        return result;
+    }
+
+    public static TreeViewItemData<Asset> Pack(Asset asset)
+    {
+        List<TreeViewItemData<Asset>> childItems = null;
+        if (asset is Folder folderState)
+        {
+            childItems = Pack(folderState.Children);
+        }
+
+        return new TreeViewItemData<Asset>(asset.Id.GetHashCode(), asset, childItems);
+    }
+    #endregion
+
     #region Fields
     private readonly VisualTreeAsset focusActionsUxml;
 
@@ -16,11 +43,11 @@ public partial class FocusActions : VisualElement
     #endregion
 
     #region Properties
-    public new (AddressableAssetSettings, List<TreeViewItemData<ProcessingState>>) dataSource { get; set; }
+    public new List<TreeViewItemData<Asset>> dataSource { get; set; }
     #endregion
 
     #region Events
-    public event System.Action<IEnumerable<TreeViewItemData<ProcessingState>>, int, int> changed;
+    public event System.Action<IEnumerable<TreeViewItemData<Asset>>, int, int> changed;
     #endregion
 
     #region Methods
@@ -39,57 +66,77 @@ public partial class FocusActions : VisualElement
         var processTargetButton = this.Q<Button>("process-button");
         var collectAndProcessTargetButton = this.Q<Button>("collect-and-process-button");
 
+        string name = GetName();
+        collectTargetButton.text = string.Format(collectTargetButton.text, name);
+        processTargetButton.text = string.Format(processTargetButton.text, name);
+        collectAndProcessTargetButton.text = string.Format(collectAndProcessTargetButton.text, name);
+
         collectTargetButton.clicked += () =>
         {
-            OnCollectAllAssets(dataSource.Item2);
+            IdentifySelectedAssets(dataSource);
 
-            UpdateVisual(dataSource.Item2, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+            UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
         };
 
         processTargetButton.clicked += () =>
         {
-            OnProcessAllAssets(dataSource.Item1, dataSource.Item2);
-            //OnCompareAssets(dataSource.Item1, dataSource.Item2, entriesByAssetFilepath);
+            ProcessSelectedAssets(dataSource);
+            CompareSelectedAssets(dataSource);
 
-            UpdateVisual(dataSource.Item2, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+            UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
         };
 
         collectAndProcessTargetButton.clicked += () =>
         {
-            OnCollectAndProcessAllAssets(dataSource.Item1, dataSource.Item2);
-            //OnCompareAssets(dataSource.Item1, dataSource.Item2, entriesByAssetFilepath);
+            IdentifySelectedAssets(dataSource);
+            ProcessSelectedAssets(dataSource);
+            CompareSelectedAssets(dataSource);
 
-            UpdateVisual(dataSource.Item2, collectTargetButton, processTargetButton, collectAndProcessTargetButton);            
+            UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);            
         };
 
-        UpdateVisual(dataSource.Item2, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+        UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
     }
 
-    private void UpdateVisual(IEnumerable<TreeViewItemData<ProcessingState>> dataItems, VisualElement collectTargetButton, VisualElement processTargetButton, VisualElement collectAndProcessTargetButton)
+    private void UpdateVisual(IEnumerable<TreeViewItemData<Asset>> dataItems, VisualElement collectTargetButton, VisualElement processTargetButton, VisualElement collectAndProcessTargetButton)
     {
         int collectedCount = 0;
         int processedCount = 0;
-
-        foreach (TreeViewItemData<ProcessingState> dataItem in dataItems)
+        
+        foreach (TreeViewItemData<Asset> dataItem in dataItems)
         {
-            if (dataItem.data is FolderCollectionAndProcessingState processingState)
-            {
-                collectedCount += processingState.assetStates.Count;
-            }
-            else if (dataItem.data is AssetCollectionAndProcessingState)
-            {
-                // Count up this one asset.
-                collectedCount++;
-            }
+            collectedCount += dataItem.data.IdentifiedCount;
 
-            processedCount += dataItem.data.assetApplicator.AssetStore.DataByAssetPath.Count;
+            /// TODO: change this so that the rule processor has the result of the operation for those assets.
+            processedCount += dataItem.data.ProcessedData.Count;
         }
 
         collectTargetButton.style.display = Show(collectedCount == 0);
         processTargetButton.style.display = Show(collectedCount != 0 && processedCount == 0);
         collectAndProcessTargetButton.style.display = Show(collectedCount == 0);
 
-        changed?.Invoke(dataSource.Item2, collectedCount, processedCount);
+        changed?.Invoke(dataSource, collectedCount, processedCount);
+    }
+
+    private string GetName()
+    {
+        var length = dataSource.Count;
+
+        if (length == 1)
+        {
+            return dataSource[0].data.Id;
+        }
+
+        string result = string.Empty;
+        int lastIndex = length - 1;
+        for (int i = 0; i < lastIndex; ++i)
+        {
+            result += dataSource[i].data.Id + ", ";
+        }
+
+        result += "and " + dataSource[lastIndex].data.Id;
+
+        return result;
     }
 
     private DisplayStyle Show(bool value)
@@ -97,214 +144,34 @@ public partial class FocusActions : VisualElement
         return value ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    #region Collection and Processing States for UI
-    private void OnCollectAllAssets(List<TreeViewItemData<ProcessingState>> folderItems)
+    private void IdentifySelectedAssets(List<TreeViewItemData<Asset>> selectedAssets)
     {
-        for (int i = 0; i < folderItems.Count; ++i)
+        foreach(TreeViewItemData<Asset> selectedAsset in selectedAssets)
         {
-            folderItems[i] = OnCollectFolderAssets(folderItems[i]);
-        }
-    }
-
-    private TreeViewItemData<ProcessingState> OnCollectFolderAssets(TreeViewItemData<ProcessingState> folderItem)
-    {
-        if (folderItem.data is not FolderCollectionAndProcessingState folderState)
-        {
-            return folderItem;
-        }
-
-        if (!folderState.enabled)
-        {
-            return folderItem;
-        }
-
-        CollectAssets(folderState);
-
-        var assetItems = folderItem.children as List<TreeViewItemData<ProcessingState>>;
-        assetItems.Clear();
-        foreach (var assetState in folderState.assetStates)
-        {
-            var assetItem = new TreeViewItemData<ProcessingState>(assetState.assetGuid.GetHashCode(), assetState, null);
-            assetItems.Add(assetItem);
-        }
-
-        return folderItem;
-    }
-
-    private void OnProcessAllAssets(AddressableAssetSettings settings, List<TreeViewItemData<ProcessingState>> folderItems)
-    {
-        for (int i = 0; i < folderItems.Count; ++i)
-        {
-            folderItems[i] = OnProcessFolderAssets(settings, folderItems[i]);
-        }
-    }
-
-    private TreeViewItemData<ProcessingState> OnProcessFolderAssets(AddressableAssetSettings settings, TreeViewItemData<ProcessingState> folderItem)
-    {
-        if (folderItem.data is not FolderCollectionAndProcessingState folderState)
-        {
-            return folderItem;
-        }
-
-        if (!folderState.enabled)
-        {
-            return folderItem;
-        }
-
-        ProcessAssets(settings, folderState);
-
-        return folderItem;
-    }
-
-    private void OnCollectAndProcessAllAssets(AddressableAssetSettings settings, List<TreeViewItemData<ProcessingState>> folderItems)
-    {
-        OnCollectAllAssets(folderItems);
-
-        OnProcessAllAssets(settings, folderItems);
-    }
-
-    private void OnCollectAndProcessFolderAssets(AddressableAssetSettings settings, TreeViewItemData<ProcessingState> folderItem)
-    {
-        OnCollectFolderAssets(folderItem);
-
-        OnProcessFolderAssets(settings, folderItem);
-    }
-    #endregion
-
-    #region Compare States for UI
-    private void OnCompareAssets(AddressableAssetSettings settings, List<TreeViewItemData<ProcessingState>> folderItems, Dictionary<string, ComparisonEntry> entriesByAssetpath)
-    {
-        for (int i = 0; i < folderItems.Count; ++i)
-        {
-            OnCompareFolderAssets(settings, folderItems[i], entriesByAssetpath);
-        }
-    }
-
-    private void OnCompareFolderAssets(AddressableAssetSettings settings, TreeViewItemData<ProcessingState> folderItem, Dictionary<string, ComparisonEntry> entriesByAssetpath)
-    {
-        if (folderItem.data is not FolderCollectionAndProcessingState folderState)
-        {
-            return;
-        }
-
-        CompareAssets(settings, folderState, entriesByAssetpath);
-    }
-    #endregion
-
-    #region Collection and Processing States
-    private static void CollectAssets(FolderCollectionAndProcessingState folderState)
-    {
-        if (!folderState.enabled)
-        {
-            return;
-        }
-
-        var assetFilePaths = new Dictionary<string, string>();
-
-        // Collect the prefab assets that are under the parent directory path.
-        folderState.assetpathCollector.GetFiles(folderState.path, ref assetFilePaths);
-
-        foreach ((string guid, string path) in assetFilePaths)
-        {
-            var assetState = new AssetCollectionAndProcessingState()
+            if (selectedAsset.data is not Folder selectedFolder)
             {
-                assetGuid = guid,
-                path = path,
-                assetpathCollector = folderState.assetpathCollector,
-                groupExtractor = folderState.groupExtractor,
-                addressExtractor = folderState.addressExtractor,
-                labelExtractor = folderState.labelExtractor,
-                assetApplicator = folderState.assetApplicator,
-            };
+                continue;
+            }
 
-            folderState.assetStates.Add(assetState);
+            selectedFolder.Identify();
         }
     }
 
-    private static void ProcessAssets(AddressableAssetSettings settings, FolderCollectionAndProcessingState folderState)
+    private void ProcessSelectedAssets(List<TreeViewItemData<Asset>> selectedAssets)
     {
-        if (!folderState.enabled)
+        foreach (TreeViewItemData<Asset> selectedAsset in selectedAssets)
         {
-            return;
-        }
-
-        if (settings == null)
-        {
-            return;
-        }
-
-        foreach (AssetCollectionAndProcessingState assetState in folderState.assetStates)
-        {
-            ProcessAsset(settings, assetState);
+            selectedAsset.data.ProcessRules();
         }
     }
 
-    private static void ProcessAsset(AddressableAssetSettings settings, AssetCollectionAndProcessingState assetState)
+    private void CompareSelectedAssets(List<TreeViewItemData<Asset>> selectedAssets)
     {
-        if (settings == null || !assetState.enabled)
+        foreach (TreeViewItemData<Asset> selectedAsset in selectedAssets)
         {
-            return;
-        }
-
-        AddressablesProcessing.ProcessAsset(settings,
-            assetState.path,
-            assetState.groupExtractor,
-            assetState.addressExtractor,
-            assetState.labelExtractor,
-            assetState.assetApplicator);
-    }
-
-    private void CollectAndProcessAssets(AddressableAssetSettings settings, List<ProcessingState> folderStates)
-    {
-        foreach (FolderCollectionAndProcessingState folderState in folderStates)
-        {
-            CollectAssets(folderState);
-        }
-
-        foreach (FolderCollectionAndProcessingState folderState in folderStates)
-        {
-            ProcessAssets(settings, folderState);
+            selectedAsset.data.Compare();
         }
     }
-    #endregion
-
-    #region Compare States
-    private void CompareAssets(AddressableAssetSettings settings, List<ProcessingState> folderStates,
-        Dictionary<string, ComparisonEntry> entriesByAssetpath)
-    {
-        foreach (FolderCollectionAndProcessingState folderState in folderStates)
-        {
-            CompareAssets(settings, folderState, entriesByAssetpath);
-        }
-    }
-
-    private void CompareAssets(AddressableAssetSettings settings, FolderCollectionAndProcessingState folderState,
-        Dictionary<string, ComparisonEntry> entriesByAssetpath)
-    {
-        if (folderState.assetApplicator is not CombinedAssetApplicator combinedAssetApplicator)
-        {
-            return;
-        }
-
-        foreach (AssetCollectionAndProcessingState assetState in folderState.assetStates)
-        {
-            CompareAsset(settings, combinedAssetApplicator, assetState.path, entriesByAssetpath);
-        }
-    }
-
-    private void CompareAsset(AddressableAssetSettings settings, CombinedAssetApplicator combinedAssetApplicator, string assetFilePath,
-        Dictionary<string, ComparisonEntry> entriesByAssetpath)
-    {
-        if (entriesByAssetpath.TryGetValue(assetFilePath, out ComparisonEntry comparisonEntry))
-        {
-            Debug.LogWarning($"Collision for '{assetFilePath}'");
-            return;
-        }
-
-        comparisonEntry = ComparisonEntries.CreateEntry(settings, combinedAssetApplicator, assetFilePath);
-        entriesByAssetpath.Add(assetFilePath, comparisonEntry);
-    }
-    #endregion
     #endregion
 
     /*/

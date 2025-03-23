@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-    <ui:Button name="collect-button" text="Identify Assets with Folder Rules" />
-    <ui:Button name="process-button" text="Process Assets with Folder Rules" />
-    <ui:Button name="collect-and-process-button" text="Identify and Process Assets with Folder Rules" />
+    <ui:Button name="collect-button" text="Identify Assets with {0}" />
+    <ui:Button name="process-button" text="Process Assets with {0}" />
+    <ui:Button name="collect-and-process-button" text="Identify and Process Assets with {0}" />
 </ui:UXML>
