@@ -4,7 +4,7 @@
             <ui:VisualElement name="global-settings" />
             <ui:MultiColumnTreeView name="main-tree-view" show-border="true" reorderable="false" auto-expand="true" show-alternating-row-backgrounds="ContentOnly" selection-type="Single" fixed-item-height="20">
                 <ui:Columns>
-                    <ui:Column name="enabled" title="Enabled" visible="true" stretchable="false" min-width="74px" />
+                    <ui:Column name="enabled" title="Enabled" visible="false" stretchable="false" min-width="74px" />
                     <ui:Column name="path" title="File Processing Rulesets" visible="true" stretchable="true" />
                 </ui:Columns>
             </ui:MultiColumnTreeView>
