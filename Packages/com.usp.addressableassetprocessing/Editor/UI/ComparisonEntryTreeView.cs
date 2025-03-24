@@ -1,5 +1,7 @@
 ﻿using Codice.CM.Common;
+using DocumentFormat.OpenXml.Vml.Office;
 using System.Collections.Generic;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -82,7 +84,7 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
     #endregion
 
     #region Events
-    public event System.Action changed;
+    public event System.Action<int> changed;
     #endregion
 
     #region Methods
@@ -254,8 +256,9 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
                 copyLeftButton.clicked += () =>
                 {
                     Copy(operation.rightHand, operation.leftHand);
+
+                    changed?.Invoke(index);
                 };
-                copyLeftButton.clicked += changed;
             }
 
             var copyRightButton = element.Q<Button>("copy-right-button");
@@ -269,16 +272,15 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
                 copyRightButton.clicked += () =>
                 {
                     Copy(operation.leftHand, operation.rightHand);
+
+                    changed?.Invoke(index);
                 };
-                copyRightButton.clicked += changed;
             }
         };
     }
 
     private void Copy(CompareOperand source, CompareOperand destination)
     {
-        ComparisonEntry firstTopEntry = GetItemDataForIndex<ComparisonEntry>(0);
-
         destination.Value = source.Value;
     }
     #endregion

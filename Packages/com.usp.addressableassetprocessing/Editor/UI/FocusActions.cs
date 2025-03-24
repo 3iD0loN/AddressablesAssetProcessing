@@ -81,7 +81,6 @@ public partial class FocusActions : VisualElement
         processTargetButton.clicked += () =>
         {
             ProcessSelectedAssets(dataSource);
-            CompareSelectedAssets(dataSource);
 
             UpdateVisual(false, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
         };
@@ -90,7 +89,6 @@ public partial class FocusActions : VisualElement
         {
             IdentifySelectedAssets(dataSource);
             ProcessSelectedAssets(dataSource);
-            CompareSelectedAssets(dataSource);
 
             UpdateVisual(true, collectTargetButton, processTargetButton, collectAndProcessTargetButton);            
         };
@@ -165,14 +163,6 @@ public partial class FocusActions : VisualElement
         foreach (TreeViewItemData<TreeViewElement<Asset>> selectedAsset in selectedAssets)
         {
             selectedAsset.data.Value.ProcessRules();
-        }
-    }
-
-    private void CompareSelectedAssets(IList<TreeViewItemData<TreeViewElement<Asset>>> selectedAssets)
-    {
-        foreach (TreeViewItemData<TreeViewElement<Asset>> selectedAsset in selectedAssets)
-        {
-            selectedAsset.data.Value.Compare();
         }
     }
     #endregion

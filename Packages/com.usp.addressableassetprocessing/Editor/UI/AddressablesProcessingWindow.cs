@@ -8,7 +8,6 @@ using UnityEditor.AddressableAssets.Settings;
 
 using USP.AddressablesAssetProcessing;
 using USP.MetaAddressables;
-using System.Linq;
 
 public abstract class AddressablesProcessingWindow : EditorWindow
 {
@@ -124,13 +123,14 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             IEnumerable<TreeViewItemData<TreeViewElement<Asset>>> selectedItems = mainTreeView.GetSelectedItems<TreeViewElement<Asset>>();
 
             ComparisonEntryTreeView comparisonEntryTreeView = selectedState.Q<ComparisonEntryTreeView>("comparison-entry");
-            System.Action updateComparisonEntryTreeView = () =>
+            System.Action rebuildComparisonEntryTreeView = () =>
             {
                 var comparisonEntries = new HashSet<ComparisonEntry>();
                 foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
                 {
-                    Asset asset = selectedItem.data.Value;
-                    var selectedComparisonEntries = asset.ComparisonEntries;
+                    Asset selectedAsset = selectedItem.data.Value;
+                    selectedAsset.Compare(false);
+                    var selectedComparisonEntries = selectedAsset.ComparisonEntries;
                     if (selectedComparisonEntries == null)
                     {
                         continue;
@@ -143,9 +143,46 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
                 TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
                 comparisonEntryTreeView.Rebuild();
+                
             };
-            comparisonEntryTreeView.changed += updateComparisonEntryTreeView;
-            updateComparisonEntryTreeView();
+            rebuildComparisonEntryTreeView();
+            comparisonEntryTreeView.changed += (int index) =>
+            {
+                var comparisonEntries = new HashSet<ComparisonEntry>();
+                foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
+                {
+                    Asset selectedAsset = selectedItem.data.Value;
+                    selectedAsset.Compare(true);
+                    var selectedComparisonEntries = selectedAsset.ComparisonEntries;
+                    if (selectedComparisonEntries == null)
+                    {
+                        continue;
+                    }
+
+                    comparisonEntries.UnionWith(selectedComparisonEntries);
+                }
+
+                /*/
+                int id = comparisonEntryTreeView.viewController.GetIdForIndex(index);
+                int rootParentId = id;
+                while (id != -1)
+                {
+                    rootParentId = id;
+                    id = comparisonEntryTreeView.viewController.GetParentId(id);
+                }
+
+                TreeViewElement<ComparisonEntry> userDataEntry = comparisonEntryTreeView.GetItemDataForId<TreeViewElement<ComparisonEntry>>(rootParentId);
+
+                var userDataEntryItem = ComparisonEntryTreeView.Pack(userDataEntry.Value);
+                TreeViewExtensions.ReplaceItem(comparisonEntryTreeView, userDataEntryItem);
+                //*/
+
+                List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries);
+
+                comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
+                TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
+                comparisonEntryTreeView.Rebuild();
+            };
 
             FocusActions focusActions = selectedState.Q<FocusActions>("focus-actions");
             focusActions.dataSource = new List<TreeViewItemData<TreeViewElement<Asset>>>(selectedItems);
@@ -162,7 +199,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                     }
                 }
 
-                updateComparisonEntryTreeView();
+                /// Rebuild the comparison tree view elements if they need to be rebuilt.
+                rebuildComparisonEntryTreeView();
 
                 deduplicateButton.SetEnabled(collectedCount != 0 && processedCount != 0);
             };

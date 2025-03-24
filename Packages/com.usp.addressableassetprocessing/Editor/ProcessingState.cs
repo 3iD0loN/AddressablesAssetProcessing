@@ -315,7 +315,7 @@ namespace USP.AddressablesAssetProcessing
             IsProcessDirty = true;
         }
 
-        public virtual void Compare()
+        public virtual void Compare(bool overwrite)
         {
             if (!IsEnabled)
             {
@@ -327,20 +327,21 @@ namespace USP.AddressablesAssetProcessing
                 return;
             }
 
-            bool found = ComparisonEntriesByAsset.TryGetValue(ComparisonEntryFactory.AssetFilePath, out ComparisonEntry comparisonEntry);
-
-            if (found)
+            if (!overwrite)
             {
-                // Do nothing else.
-                return;
+                bool found = ComparisonEntriesByAsset.TryGetValue(ComparisonEntryFactory.AssetFilePath, out ComparisonEntry comparisonEntry);
+
+                if (found)
+                {
+                    // Do nothing else.
+                    return;
+                }
             }
 
             // Attempt to create a new comparison.
             ComparisonEntryFactory.Create();
 
-            comparisonEntry = ComparisonEntryFactory.ComparisonEntry;
-
-            ComparisonEntriesByAsset.Add(ComparisonEntryFactory.AssetFilePath, comparisonEntry);
+            ComparisonEntriesByAsset[ComparisonEntryFactory.AssetFilePath] = ComparisonEntryFactory.ComparisonEntry;
 
             // Let the parent folders know that they should recache their comparison data.
             IsCompareDirty = true;
@@ -478,7 +479,7 @@ namespace USP.AddressablesAssetProcessing
             }
         }
 
-        public override void Compare()
+        public override void Compare(bool overwrite)
         {
             if (!IsEnabled)
             {
@@ -487,7 +488,7 @@ namespace USP.AddressablesAssetProcessing
 
             foreach (Asset asset in Children)
             {
-                asset.Compare();
+                asset.Compare(overwrite);
             }
         }
         #endregion
@@ -517,6 +518,21 @@ namespace USP.AddressablesAssetProcessing
     public static class TreeViewExtensions
     {
         #region Static Methods
+        public static void AddItem<T>(BaseTreeView treeView, int parentId, TreeViewItemData<T> item, int childIndex = -1, bool rebuildTree = true)
+        {
+            treeView.AddItem(item, parentId, childIndex, rebuildTree);
+
+            AddItems(treeView, item.id, item.children, childIndex, rebuildTree);
+        }
+
+        public static void AddItems<T>(BaseTreeView treeView, int parentId, IEnumerable<TreeViewItemData<T>> items, int childIndex = -1, bool rebuildTree = true)
+        {
+            foreach (var item in items)
+            {
+                AddItem(treeView, parentId, item, childIndex, rebuildTree);
+            }
+        }
+
         public static void AddUniqueItem<T>(BaseTreeView treeView, int parentId, TreeViewItemData<T> item, int childIndex = -1, bool rebuildTree = true)
         {
             if (treeView.viewController.GetIndexForId(item.id) == -1)
@@ -533,6 +549,22 @@ namespace USP.AddressablesAssetProcessing
             {
                 AddUniqueItem(treeView, parentId, item, childIndex, rebuildTree);
             }
+        }
+
+        public static void ReplaceItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, int parentId = -1, int childIndex = -1, bool rebuildTree = true)
+        {
+            treeView.TryRemoveItem(item.id, false);
+            treeView.AddItem(item, parentId, childIndex, rebuildTree);
+
+            //ReplaceItems(treeView, item.children, item.id, childIndex, rebuildTree);
+        }
+
+        public static void ReplaceItems<T>(BaseTreeView treeView, IEnumerable<TreeViewItemData<T>> items, int parentId = -1, int childIndex = -1, bool rebuildTree = true)
+        {
+            //foreach (var item in items)
+            //{
+            //    ReplaceItem(treeView, item, parentId, childIndex, rebuildTree);
+            //}
         }
 
         public static void ExpandItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, bool shouldRefresh)
