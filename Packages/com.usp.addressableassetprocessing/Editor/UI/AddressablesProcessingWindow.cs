@@ -70,14 +70,17 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         mainTreeView.SetRootItems(folderItems);
         TreeViewExtensions.ExpandItems(mainTreeView, folderItems, true);
 
+        /*/
         mainTreeView.itemExpandedChanged += (TreeViewExpansionChangedArgs args) =>
         {
             TreeViewElement<Asset> item = mainTreeView.GetItemDataForId<TreeViewElement<Asset>>(args.id);
             item.IsExpanded = args.isExpanded;
         };
+        //*/
 
         var assetStateUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
 
+        /*/
         Column enabledColumn = mainTreeView.columns["enabled"];
         enabledColumn.makeCell = () => new Toggle();
         enabledColumn.bindCell = (VisualElement element, int index) =>
@@ -92,7 +95,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             toggle.value = state.Value.IsEnabled;
             toggle.RegisterCallback<ChangeEvent<bool>>(@event => state.Value.IsEnabled = @event.newValue);
         };
-
+        //*/
+        
         Column pathColumn = mainTreeView.columns["path"];
         pathColumn.makeCell = () => new Label();
         pathColumn.bindCell = (VisualElement element, int index) =>
@@ -125,7 +129,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 var comparisonEntries = new HashSet<ComparisonEntry>();
                 foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
                 {
-                    var selectedComparisonEntries = selectedItem.data.Value.ComparisonEntries;
+                    Asset asset = selectedItem.data.Value;
+                    var selectedComparisonEntries = asset.ComparisonEntries;
                     if (selectedComparisonEntries == null)
                     {
                         continue;
@@ -133,17 +138,12 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
                     comparisonEntries.UnionWith(selectedComparisonEntries);
                 }
+                List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries);
 
-                List<TreeViewItemData<ComparisonEntry>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries);
                 comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
+                TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
                 comparisonEntryTreeView.Rebuild();
-                comparisonEntryTreeView.ExpandAll();
-                foreach (TreeViewItemData<ComparisonEntry> comparisonEntryItem in comparisonEntryItems)
-                {
-                    comparisonEntryTreeView.CollapseItem(comparisonEntryItem.id, false);
-                }
             };
-
             comparisonEntryTreeView.changed += updateComparisonEntryTreeView;
             updateComparisonEntryTreeView();
 
@@ -158,10 +158,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                     foreach (var selectedItem in focusActions.dataSource)
                     {
                         // Add the child items under the the selected item in the tree view.
-                        TreeViewExtensions.AddItems(mainTreeView, selectedItem.id, selectedItem.children);
+                        TreeViewExtensions.AddUniqueItems(mainTreeView, selectedItem.id, selectedItem.children);
                     }
-
-                    //TreeViewExtensions.ExpandItems(mainTreeView, folderItems, true);
                 }
 
                 updateComparisonEntryTreeView();

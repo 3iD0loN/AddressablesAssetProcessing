@@ -166,8 +166,18 @@ namespace USP.AddressablesAssetProcessing
 
     public class Asset
     {
+        private static Dictionary<string, ComparisonEntry> ComparisonEntriesByAsset = new Dictionary<string, ComparisonEntry>();
+
+        private static Dictionary<string, MetaAddressables.UserData> ProcessedDataByAssetPath = new Dictionary<string, MetaAddressables.UserData>();
+
         #region Fields
+        internal Folder parent;
+
+        private bool isProcessDirty;
+
         protected HashSet<MetaAddressables.UserData> processedData;
+
+        private bool isCompareDirty;
 
         protected HashSet<ComparisonEntry> comparisonEntries;
         #endregion
@@ -177,24 +187,95 @@ namespace USP.AddressablesAssetProcessing
 
         public bool IsEnabled { get; set; }
 
+        public virtual int IdentifiedCount => 1;
+
         public IRuleProcessor RuleProcessor { get; }
 
         public ComparisonEntryFactory ComparisonEntryFactory { get; }
 
-        public IReadOnlyCollection<MetaAddressables.UserData> ProcessedData => processedData;
+        protected bool IsProcessDirty
+        {
+            get => isProcessDirty;
+            set
+            {
+                isProcessDirty = value;
 
-        public virtual int IdentifiedCount => 1;
+                if (IsProcessDirty && parent != null)
+                {
+                    parent.IsProcessDirty = true;
+                }
+            }
+        }
 
-        public IReadOnlyCollection<ComparisonEntry> ComparisonEntries => comparisonEntries;
+        public virtual IReadOnlyCollection<MetaAddressables.UserData> ProcessedData
+        {
+            get
+            {
+                if (IsProcessDirty)
+                {
+                    processedData.Clear();
+                    
+                    // Attempt to find whether a entry associated with the asset path already exists in the global cache.
+                    bool found = ProcessedDataByAssetPath.TryGetValue(RuleProcessor.AssetFilePath, out MetaAddressables.UserData userData);
+                    if (found)
+                    {
+                        processedData.Add(userData);
+                    }
+
+                    IsProcessDirty = false;
+                }
+
+                return processedData;
+            }
+        }
+
+        protected bool IsCompareDirty
+        {
+            get => isCompareDirty;
+            set
+            {
+                isCompareDirty = value;
+
+                if (IsCompareDirty && parent != null)
+                {
+                    parent.IsCompareDirty = true;
+                }
+            }
+        }
+
+        public virtual IReadOnlyCollection<ComparisonEntry> ComparisonEntries
+        {
+            get
+            {
+                if (IsCompareDirty)
+                {
+                    comparisonEntries.Clear();
+
+                    // Attempt to find whether a entry associated with the asset path already exists in the global cache.
+                    bool found = ComparisonEntriesByAsset.TryGetValue(RuleProcessor.AssetFilePath, out ComparisonEntry comparisonEntry);
+                    if (found)
+                    {
+                        comparisonEntries.Add(comparisonEntry);
+                    }
+
+                    IsCompareDirty = false;
+                }
+
+                return comparisonEntries;
+            }
+        }
         #endregion
 
         #region Methods
-        public Asset(string assetGuid, IRuleProcessor ruleProcessor)
+        public Asset(Folder parent, string assetGuid, IRuleProcessor ruleProcessor)
         {
-            Id = assetGuid;
-            RuleProcessor = ruleProcessor;
-            IsEnabled = true;
-            processedData = new HashSet<MetaAddressables.UserData>(new UserDataComparer());
+            this.parent = parent;
+            this.Id = assetGuid;
+            this.RuleProcessor = ruleProcessor;
+            this.isProcessDirty = true;
+            this.IsEnabled = true;
+            this.isCompareDirty = true;
+            this.processedData = new HashSet<MetaAddressables.UserData>(new UserDataComparer());
 
             if (ruleProcessor.Rules.AssetApplicationMethod is CombinedAssetApplicator combinedAssetApplicator)
             {
@@ -212,17 +293,26 @@ namespace USP.AddressablesAssetProcessing
                 return;
             }
 
+            // Attempt to find whether a entry associated with the asset path already exists in the global cache.
+            bool found = ProcessedDataByAssetPath.TryGetValue(RuleProcessor.AssetFilePath, out MetaAddressables.UserData userData);
+
+            // If there is an entry associated with the asset path, then:
+            if (found)
+            {
+                // Do nothing else.
+                return;
+            }
+
+            // Process the rules to create a new entry.
             RuleProcessor.ProcessRules();
 
-            bool found = processedData.TryGetValue(RuleProcessor.ProcessedData,
-                out MetaAddressables.UserData userData);
+            userData = RuleProcessor.ProcessedData;
 
-            if (!found)
-            {
-                userData = RuleProcessor.ProcessedData;
+            // Associate the new entry with the asset path.
+            ProcessedDataByAssetPath.Add(RuleProcessor.AssetFilePath, userData);
 
-                processedData.Add(userData);
-            }
+            // Let the parent folders know that they should recache their processed data.
+            IsProcessDirty = true;
         }
 
         public virtual void Compare()
@@ -232,21 +322,28 @@ namespace USP.AddressablesAssetProcessing
                 return;
             }
 
-            ComparisonEntryFactory?.Create();
-            
-            if (comparisonEntries == null)
+            if (ComparisonEntryFactory == null)
             {
                 return;
             }
 
-            var comparisonEntry = ComparisonEntryFactory?.ComparisonEntry;
+            bool found = ComparisonEntriesByAsset.TryGetValue(ComparisonEntryFactory.AssetFilePath, out ComparisonEntry comparisonEntry);
 
-            bool found = comparisonEntries.Contains(comparisonEntry);
-
-            if (!found)
+            if (found)
             {
-                comparisonEntries.Add(comparisonEntry);
+                // Do nothing else.
+                return;
             }
+
+            // Attempt to create a new comparison.
+            ComparisonEntryFactory.Create();
+
+            comparisonEntry = ComparisonEntryFactory.ComparisonEntry;
+
+            ComparisonEntriesByAsset.Add(ComparisonEntryFactory.AssetFilePath, comparisonEntry);
+
+            // Let the parent folders know that they should recache their comparison data.
+            IsCompareDirty = true;
         }
         #endregion
     }
@@ -265,6 +362,46 @@ namespace USP.AddressablesAssetProcessing
         public IReadOnlyList<Asset> Children => children;
 
         public override int IdentifiedCount => assetCount;
+
+        public override IReadOnlyCollection<MetaAddressables.UserData> ProcessedData
+        {
+            get
+            {
+                if (IsProcessDirty)
+                {
+                    processedData.Clear();
+
+                    foreach (Asset asset in Children)
+                    {
+                        processedData.UnionWith(asset.ProcessedData);
+                    }
+
+                    IsProcessDirty = false;
+                }
+
+                return processedData;
+            }
+        }
+
+        public override IReadOnlyCollection<ComparisonEntry> ComparisonEntries
+        {
+            get
+            {
+                if (IsCompareDirty)
+                {
+                    comparisonEntries.Clear();
+
+                    foreach (Asset asset in Children)
+                    {
+                        comparisonEntries.UnionWith(asset.ComparisonEntries);
+                    }
+
+                    IsCompareDirty = false;
+                }
+
+                return comparisonEntries;
+            }
+        }
         #endregion
 
         #region Methods
@@ -282,10 +419,20 @@ namespace USP.AddressablesAssetProcessing
 
         // Used for parent folders that have subfolders and assets.
         public Folder(string assetId, IAssetIdentifier assetIdentifier, IRuleProcessor ruleProcessor, List<Asset> children) :
-            base(assetId, ruleProcessor)
+            base(null, assetId, ruleProcessor)
         {
             this.AssetIdentifier = assetIdentifier;
             this.children = children;
+
+            if (children == null)
+            {
+                return;
+            }
+
+            foreach(var child in children)
+            {
+                child.parent = this;
+            }
         }
 
         public void Identify()
@@ -302,7 +449,7 @@ namespace USP.AddressablesAssetProcessing
                 foreach ((string assetGuid, string assetfilePath) in AssetIdentifier.AssetFilePathsByGuids)
                 {
                     var ruleProcessor = new RuleProcessor(RuleProcessor.Settings, assetfilePath, RuleProcessor.Rules);
-                    children.Add(new Asset(assetfilePath, ruleProcessor));
+                    children.Add(new Asset(this, assetfilePath, ruleProcessor));
                 }
             }
 
@@ -328,8 +475,6 @@ namespace USP.AddressablesAssetProcessing
             foreach (Asset asset in Children)
             {
                 asset.ProcessRules();
-
-                processedData.UnionWith(asset.ProcessedData);
             }
         }
 
@@ -343,8 +488,6 @@ namespace USP.AddressablesAssetProcessing
             foreach (Asset asset in Children)
             {
                 asset.Compare();
-
-                comparisonEntries.UnionWith(asset.ComparisonEntries);
             }
         }
         #endregion
@@ -374,18 +517,21 @@ namespace USP.AddressablesAssetProcessing
     public static class TreeViewExtensions
     {
         #region Static Methods
-        public static void AddItem<T>(BaseTreeView treeView, int parentId, TreeViewItemData<T> item, int childIndex = -1, bool rebuildTree = true)
+        public static void AddUniqueItem<T>(BaseTreeView treeView, int parentId, TreeViewItemData<T> item, int childIndex = -1, bool rebuildTree = true)
         {
-            treeView.AddItem(item, parentId, childIndex, rebuildTree);
+            if (treeView.viewController.GetIndexForId(item.id) == -1)
+            {
+                treeView.AddItem(item, parentId, childIndex, rebuildTree);
+            }
 
-            AddItems(treeView, item.id, item.children, childIndex, rebuildTree);
+            AddUniqueItems(treeView, item.id, item.children, childIndex, rebuildTree);
         }
 
-        public static void AddItems<T>(BaseTreeView treeView, int parentId, IEnumerable<TreeViewItemData<T>> items, int childIndex = -1, bool rebuildTree = true)
+        public static void AddUniqueItems<T>(BaseTreeView treeView, int parentId, IEnumerable<TreeViewItemData<T>> items, int childIndex = -1, bool rebuildTree = true)
         {
             foreach (var item in items)
             {
-                AddItem(treeView, parentId, item, childIndex, rebuildTree);
+                AddUniqueItem(treeView, parentId, item, childIndex, rebuildTree);
             }
         }
 

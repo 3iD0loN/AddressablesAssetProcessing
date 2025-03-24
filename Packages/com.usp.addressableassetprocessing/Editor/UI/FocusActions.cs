@@ -33,6 +33,7 @@ public partial class FocusActions : VisualElement
         var item = new TreeViewElement<Asset>(true, asset);
         return new TreeViewItemData<TreeViewElement<Asset>>(asset.Id.GetHashCode(), item, childItems);
     }
+
     #endregion
 
     #region Fields
@@ -175,114 +176,4 @@ public partial class FocusActions : VisualElement
         }
     }
     #endregion
-
-    /*/
-foreach (TreeViewItemData<ProcessingState> selectedItem in selectedItems)
-{
-    selectedState.Clear();
-
-    if (selectedItem.data is FolderCollectionAndProcessingState folderState)
-    {
-        folderStateUxml.CloneTree(selectedState);
-
-        var collectFolderAssetsButton = selectedState.Q<Button>("collect-folder-button");
-        var collectAndProcessFolderAssetsButton = selectedState.Q<Button>("collect-and-process-folder-button");
-        var processFolderButton = selectedState.Q<Button>("process-folder-button");
-
-        collectFolderAssetsButton.SetEnabled(folderState.assetStates.Count == 0);
-        collectAndProcessFolderAssetsButton.SetEnabled(folderState.assetApplicator.AssetStore.DataByAssetPath.Count == 0);
-        processFolderButton.SetEnabled(folderState.assetStates.Count != 0 && folderState.assetApplicator.AssetStore.DataByAssetPath.Count == 0);
-
-        collectFolderAssetsButton.clicked += () =>
-        {
-            OnCollectFolderAssets(selectedItem);
-
-
-
-            collectFolderAssetsButton.SetEnabled(false);
-            collectAndProcessFolderAssetsButton.SetEnabled(false);
-            processFolderButton.SetEnabled(true);
-        };
-
-        collectAndProcessFolderAssetsButton.clicked += () =>
-        {
-            OnCollectAndProcessFolderAssets(settings, selectedItem);
-            OnCompareFolderAssets(settings, selectedItem, entriesByAssetFilepath);
-
-            mainTreeView.SetRootItems(folderItems);
-            mainTreeView.ExpandItem(selectedItem.id, true);
-            mainTreeView.Rebuild();
-
-            collectFolderAssetsButton.SetEnabled(false);
-            collectAndProcessFolderAssetsButton.SetEnabled(false);
-            processFolderButton.SetEnabled(false);
-        };
-
-        processFolderButton.clicked += () =>
-        {
-            OnProcessFolderAssets(settings, selectedItem);
-            OnCompareFolderAssets(settings, selectedItem, entriesByAssetFilepath);
-
-            mainTreeView.SetRootItems(folderItems);
-            mainTreeView.ExpandItem(selectedItem.id, true);
-            mainTreeView.Rebuild();
-
-            collectFolderAssetsButton.SetEnabled(false);
-            collectAndProcessFolderAssetsButton.SetEnabled(false);
-            processFolderButton.SetEnabled(false);
-        };
-    }
-    else if (selectedItem.data is AssetCollectionAndProcessingState assetState)
-    {
-
-    }
-
-}
-//*/
-
-    /*/
-            collectAllAssetsButton.clicked += () =>
-            {
-                OnCollectAllAssets(folderItems);
-
-                collectAllAssetsButton.SetEnabled(false);
-                collectAndProcessAllAssetsButton.SetEnabled(false);
-                processAllButton.SetEnabled(true);
-
-                mainTreeView.SetRootItems(folderItems);
-                mainTreeView.ExpandAll();
-                mainTreeView.Rebuild();
-                deduplicateButton.SetEnabled(false);
-            };
-
-            collectAndProcessAllAssetsButton.clicked += () =>
-            {
-                OnCollectAndProcessAllAssets(settings, folderItems);
-                OnCompareAssets(settings, folderItems, entriesByAssetFilepath);
-
-                mainTreeView.SetRootItems(folderItems);
-                mainTreeView.ExpandAll();
-                mainTreeView.Rebuild();
-
-                collectAllAssetsButton.SetEnabled(false);
-                collectAndProcessAllAssetsButton.SetEnabled(false);
-                processAllButton.SetEnabled(false);
-                deduplicateButton.SetEnabled(true);
-            };
-
-            processAllButton.clicked += () =>
-            {
-                OnProcessAllAssets(settings, folderItems);
-                OnCompareAssets(settings, folderItems, entriesByAssetFilepath);
-
-                mainTreeView.SetRootItems(folderItems);
-                mainTreeView.ExpandAll();
-                mainTreeView.Rebuild();
-
-                collectAllAssetsButton.SetEnabled(false);
-                collectAndProcessAllAssetsButton.SetEnabled(false);
-                processAllButton.SetEnabled(false);
-                deduplicateButton.SetEnabled(true);
-            };
-    //*/
 }
