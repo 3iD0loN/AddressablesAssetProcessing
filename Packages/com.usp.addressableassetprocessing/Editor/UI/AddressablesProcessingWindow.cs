@@ -66,9 +66,15 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         List<Folder> folders = BuildFolderStates(addressablesAssetStore);
         
         MultiColumnTreeView mainTreeView = rootVisualElement.Q<MultiColumnTreeView>("main-tree-view");
-        List<TreeViewItemData<Asset>> folderItems = FocusActions.Pack(folders);
+        List<TreeViewItemData<TreeViewElement<Asset>>> folderItems = FocusActions.Pack(folders);
         mainTreeView.SetRootItems(folderItems);
-        mainTreeView.ExpandAll();
+        TreeViewExtensions.ExpandItems(mainTreeView, folderItems, true);
+
+        mainTreeView.itemExpandedChanged += (TreeViewExpansionChangedArgs args) =>
+        {
+            TreeViewElement<Asset> item = mainTreeView.GetItemDataForId<TreeViewElement<Asset>>(args.id);
+            item.IsExpanded = args.isExpanded;
+        };
 
         var assetStateUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
 
@@ -81,10 +87,10 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 return;
             }
 
-            var state = mainTreeView.GetItemDataForIndex<Asset>(index);
+            var state = mainTreeView.GetItemDataForIndex<TreeViewElement<Asset>>(index);
 
-            toggle.value = state.IsEnabled;
-            toggle.RegisterCallback<ChangeEvent<bool>>(@event => state.IsEnabled = @event.newValue);
+            toggle.value = state.Value.IsEnabled;
+            toggle.RegisterCallback<ChangeEvent<bool>>(@event => state.Value.IsEnabled = @event.newValue);
         };
 
         Column pathColumn = mainTreeView.columns["path"];
@@ -96,9 +102,9 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 return;
             }
 
-            var state = mainTreeView.GetItemDataForIndex<Asset>(index);
+            var state = mainTreeView.GetItemDataForIndex<TreeViewElement<Asset>>(index);
 
-            label.text = state.Id;
+            label.text = state.Value.Id;
         };
 
         var deduplicateButton = rootVisualElement.Q<Button>("deduplicate-all-button");
@@ -111,20 +117,21 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             selectedState.Clear();
             assetStateUxml.CloneTree(selectedState);
 
-            IEnumerable<TreeViewItemData<Asset>> selectedItems = mainTreeView.GetSelectedItems<Asset>();
+            IEnumerable<TreeViewItemData<TreeViewElement<Asset>>> selectedItems = mainTreeView.GetSelectedItems<TreeViewElement<Asset>>();
 
             ComparisonEntryTreeView comparisonEntryTreeView = selectedState.Q<ComparisonEntryTreeView>("comparison-entry");
             System.Action updateComparisonEntryTreeView = () =>
             {
                 var comparisonEntries = new HashSet<ComparisonEntry>();
-                foreach (TreeViewItemData<Asset> selectedItem in selectedItems)
+                foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
                 {
-                    if (selectedItem.data.ComparisonEntries == null)
+                    var selectedComparisonEntries = selectedItem.data.Value.ComparisonEntries;
+                    if (selectedComparisonEntries == null)
                     {
                         continue;
                     }
 
-                    comparisonEntries.UnionWith(selectedItem.data.ComparisonEntries);
+                    comparisonEntries.UnionWith(selectedComparisonEntries);
                 }
 
                 List<TreeViewItemData<ComparisonEntry>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries);
@@ -141,13 +148,21 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             updateComparisonEntryTreeView();
 
             FocusActions focusActions = selectedState.Q<FocusActions>("focus-actions");
-            focusActions.dataSource = new List<TreeViewItemData<Asset>>(selectedItems);
-            focusActions.changed += (IEnumerable<TreeViewItemData<Asset>> selectedItems, int collectedCount, int processedCount) =>
+            focusActions.dataSource = new List<TreeViewItemData<TreeViewElement<Asset>>>(selectedItems);
+            focusActions.changed += (bool elementsChanged, int collectedCount, int processedCount) =>
             {
-                folderItems = FocusActions.Pack(folders);
-                mainTreeView.SetRootItems(folderItems);
-                mainTreeView.ExpandAll();
-                mainTreeView.Rebuild();
+                // If the elements that were focused on in the tree view were modified by the actions, then:
+                if (elementsChanged)
+                {
+                    // For every item that was seleceted, perform the following:
+                    foreach (var selectedItem in focusActions.dataSource)
+                    {
+                        // Add the child items under the the selected item in the tree view.
+                        TreeViewExtensions.AddItems(mainTreeView, selectedItem.id, selectedItem.children);
+                    }
+
+                    //TreeViewExtensions.ExpandItems(mainTreeView, folderItems, true);
+                }
 
                 updateComparisonEntryTreeView();
 

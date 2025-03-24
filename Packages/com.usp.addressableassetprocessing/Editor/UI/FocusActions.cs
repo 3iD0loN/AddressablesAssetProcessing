@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using Unity.IO.LowLevel.Unsafe;
-using UnityEditor;
-using UnityEditor.AddressableAssets.Settings;
-using UnityEngine;
+﻿using System;
+using System.Collections.Generic;
+
 using UnityEngine.UIElements;
 
 using USP.AddressablesAssetProcessing;
@@ -12,27 +10,28 @@ using static AddressablesProcessingWindow;
 public partial class FocusActions : VisualElement
 {
     #region Static
-    public static List<TreeViewItemData<Asset>> Pack(IEnumerable<Asset> assets)
+    public static List<TreeViewItemData<TreeViewElement<Asset>>> Pack(IEnumerable<Asset> assets)
     {
-        var result = new List<TreeViewItemData<Asset>>();
+        var result = new List<TreeViewItemData<TreeViewElement<Asset>>>();
         foreach (Asset asset in assets)
         {
-            TreeViewItemData<Asset> item = Pack(asset);
+            TreeViewItemData<TreeViewElement<Asset>> item = Pack(asset);
             result.Add(item);
         }
 
         return result;
     }
 
-    public static TreeViewItemData<Asset> Pack(Asset asset)
+    public static TreeViewItemData<TreeViewElement<Asset>> Pack(Asset asset)
     {
-        List<TreeViewItemData<Asset>> childItems = null;
+        List<TreeViewItemData<TreeViewElement<Asset>>> childItems = null;
         if (asset is Folder folderState)
         {
             childItems = Pack(folderState.Children);
         }
 
-        return new TreeViewItemData<Asset>(asset.Id.GetHashCode(), asset, childItems);
+        var item = new TreeViewElement<Asset>(true, asset);
+        return new TreeViewItemData<TreeViewElement<Asset>>(asset.Id.GetHashCode(), item, childItems);
     }
     #endregion
 
@@ -43,11 +42,11 @@ public partial class FocusActions : VisualElement
     #endregion
 
     #region Properties
-    public new List<TreeViewItemData<Asset>> dataSource { get; set; }
+    public new IList<TreeViewItemData<TreeViewElement<Asset>>> dataSource { get; set; }
     #endregion
 
     #region Events
-    public event System.Action<IEnumerable<TreeViewItemData<Asset>>, int, int> changed;
+    public event Action<bool, int, int> changed;
     #endregion
 
     #region Methods
@@ -75,7 +74,7 @@ public partial class FocusActions : VisualElement
         {
             IdentifySelectedAssets(dataSource);
 
-            UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+            UpdateVisual(true, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
         };
 
         processTargetButton.clicked += () =>
@@ -83,7 +82,7 @@ public partial class FocusActions : VisualElement
             ProcessSelectedAssets(dataSource);
             CompareSelectedAssets(dataSource);
 
-            UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+            UpdateVisual(false, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
         };
 
         collectAndProcessTargetButton.clicked += () =>
@@ -92,30 +91,30 @@ public partial class FocusActions : VisualElement
             ProcessSelectedAssets(dataSource);
             CompareSelectedAssets(dataSource);
 
-            UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);            
+            UpdateVisual(true, collectTargetButton, processTargetButton, collectAndProcessTargetButton);            
         };
 
-        UpdateVisual(dataSource, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+        UpdateVisual(false, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
     }
 
-    private void UpdateVisual(IEnumerable<TreeViewItemData<Asset>> dataItems, VisualElement collectTargetButton, VisualElement processTargetButton, VisualElement collectAndProcessTargetButton)
+    private void UpdateVisual(bool elementsChanged, VisualElement collectTargetButton, VisualElement processTargetButton, VisualElement collectAndProcessTargetButton)
     {
         int collectedCount = 0;
         int processedCount = 0;
         
-        foreach (TreeViewItemData<Asset> dataItem in dataItems)
+        foreach (TreeViewItemData<TreeViewElement<Asset>> dataItem in dataSource)
         {
-            collectedCount += dataItem.data.IdentifiedCount;
+            collectedCount += dataItem.data.Value.IdentifiedCount;
 
             /// TODO: change this so that the rule processor has the result of the operation for those assets.
-            processedCount += dataItem.data.ProcessedData.Count;
+            processedCount += dataItem.data.Value.ProcessedData.Count;
         }
 
         collectTargetButton.style.display = Show(collectedCount == 0);
         processTargetButton.style.display = Show(collectedCount != 0 && processedCount == 0);
         collectAndProcessTargetButton.style.display = Show(collectedCount == 0);
 
-        changed?.Invoke(dataSource, collectedCount, processedCount);
+        changed?.Invoke(elementsChanged, collectedCount, processedCount);
     }
 
     private string GetName()
@@ -124,17 +123,17 @@ public partial class FocusActions : VisualElement
 
         if (length == 1)
         {
-            return dataSource[0].data.Id;
+            return dataSource[0].data.Value.Id;
         }
 
         string result = string.Empty;
         int lastIndex = length - 1;
         for (int i = 0; i < lastIndex; ++i)
         {
-            result += dataSource[i].data.Id + ", ";
+            result += dataSource[i].data.Value.Id + ", ";
         }
 
-        result += "and " + dataSource[lastIndex].data.Id;
+        result += "and " + dataSource[lastIndex].data.Value.Id;
 
         return result;
     }
@@ -144,32 +143,35 @@ public partial class FocusActions : VisualElement
         return value ? DisplayStyle.Flex : DisplayStyle.None;
     }
 
-    private void IdentifySelectedAssets(List<TreeViewItemData<Asset>> selectedAssets)
+    private void IdentifySelectedAssets(IList<TreeViewItemData<TreeViewElement<Asset>>> selectedAssets)
     {
-        foreach(TreeViewItemData<Asset> selectedAsset in selectedAssets)
+        for(int i = 0; i < selectedAssets.Count; ++i)
         {
-            if (selectedAsset.data is not Folder selectedFolder)
+            if (selectedAssets[i].data.Value is not Folder selectedFolder)
             {
                 continue;
             }
 
             selectedFolder.Identify();
+
+            // Overwrite this item with an item that has children.
+            selectedAssets[i] = Pack(selectedFolder);
         }
     }
 
-    private void ProcessSelectedAssets(List<TreeViewItemData<Asset>> selectedAssets)
+    private void ProcessSelectedAssets(IList<TreeViewItemData<TreeViewElement<Asset>>> selectedAssets)
     {
-        foreach (TreeViewItemData<Asset> selectedAsset in selectedAssets)
+        foreach (TreeViewItemData<TreeViewElement<Asset>> selectedAsset in selectedAssets)
         {
-            selectedAsset.data.ProcessRules();
+            selectedAsset.data.Value.ProcessRules();
         }
     }
 
-    private void CompareSelectedAssets(List<TreeViewItemData<Asset>> selectedAssets)
+    private void CompareSelectedAssets(IList<TreeViewItemData<TreeViewElement<Asset>>> selectedAssets)
     {
-        foreach (TreeViewItemData<Asset> selectedAsset in selectedAssets)
+        foreach (TreeViewItemData<TreeViewElement<Asset>> selectedAsset in selectedAssets)
         {
-            selectedAsset.data.Compare();
+            selectedAsset.data.Value.Compare();
         }
     }
     #endregion

@@ -3,9 +3,7 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
-    using DocumentFormat.OpenXml.Presentation;
-    using GluonGui.Dialog;
-    using UnityEngine.WSA;
+    using UnityEngine.UIElements;
     using USP.MetaAddressables;
 
     public interface IAssetIdentifier
@@ -347,6 +345,64 @@ namespace USP.AddressablesAssetProcessing
                 asset.Compare();
 
                 comparisonEntries.UnionWith(asset.ComparisonEntries);
+            }
+        }
+        #endregion
+    }
+
+    public class TreeViewElement
+    {
+        public bool IsExpanded { get; set; }
+
+        public TreeViewElement(bool isExpanded)
+        {
+            IsExpanded = isExpanded;
+        }
+    }
+
+    public class TreeViewElement<T> : TreeViewElement
+    {
+        public T Value { get; set; }
+
+        public TreeViewElement(bool isExpanded, T value) :
+            base(isExpanded)
+        {
+            Value = value;
+        }
+    }
+
+    public static class TreeViewExtensions
+    {
+        #region Static Methods
+        public static void AddItem<T>(BaseTreeView treeView, int parentId, TreeViewItemData<T> item, int childIndex = -1, bool rebuildTree = true)
+        {
+            treeView.AddItem(item, parentId, childIndex, rebuildTree);
+
+            AddItems(treeView, item.id, item.children, childIndex, rebuildTree);
+        }
+
+        public static void AddItems<T>(BaseTreeView treeView, int parentId, IEnumerable<TreeViewItemData<T>> items, int childIndex = -1, bool rebuildTree = true)
+        {
+            foreach (var item in items)
+            {
+                AddItem(treeView, parentId, item, childIndex, rebuildTree);
+            }
+        }
+
+        public static void ExpandItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, bool shouldRefresh)
+            where T : TreeViewElement
+        {
+            treeView.ExpandItem(item.id, item.data.IsExpanded, shouldRefresh);
+
+            ExpandItems(treeView, item.children, shouldRefresh);
+        }
+
+        public static void ExpandItems<T>(BaseTreeView treeView, IEnumerable<TreeViewItemData<T>> items, bool shouldRefresh)
+            where T : TreeViewElement
+        {
+            foreach (var item in items)
+            {
+                ExpandItem(treeView, item, shouldRefresh);
             }
         }
         #endregion
