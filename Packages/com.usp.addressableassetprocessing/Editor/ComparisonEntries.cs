@@ -77,7 +77,7 @@ namespace USP.AddressablesAssetProcessing
 
                 setter?.Invoke(this.parentValue, value);
 
-                x.Reapply();
+                x?.Reapply();
             }
         }
         #endregion
