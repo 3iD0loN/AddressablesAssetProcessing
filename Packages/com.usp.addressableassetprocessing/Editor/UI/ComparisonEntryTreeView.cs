@@ -207,81 +207,21 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
         
         column.minWidth = column.width = width;
 
-        column.makeCell = () =>
-        {
-            var result = new VisualElement();
-            compareEntryControlsUxml.CloneTree(result);
-            result.styleSheets.Add(comparisonEntryUss);
+        column.makeCell = () => new CompareOperationField();
 
-            return result;
-        };
         column.bindCell = (VisualElement element, int index) =>
         {
+            if (element is not CompareOperationField compareOperationField)
+            {
+                return;
+            }
+
             var entry = GetItemDataForIndex<TreeViewElement<ComparisonEntry>>(index);
             CompareOperation operation = entry.Value.compareOperations[name];
 
-            var sameLabel = element.Q<Label>("same-label");
-            var differentLabel = element.Q<Label>("different-label");
-            var differentButtons = element.Q<VisualElement>("different-buttons");
-
-            if (operation.result)
-            {
-                sameLabel.style.display = DisplayStyle.Flex;
-                differentLabel.style.display = DisplayStyle.None;
-                differentButtons.style.display = DisplayStyle.None;
-
-                return;
-            }
-
-            if (operation.leftHand.IsReadonly && operation.rightHand.IsReadonly)
-            {
-                sameLabel.style.display = DisplayStyle.None;
-                differentLabel.style.display = DisplayStyle.Flex;
-                differentButtons.style.display = DisplayStyle.None;
-
-                return;
-            }
-
-            sameLabel.style.display = DisplayStyle.None;
-            differentLabel.style.display = DisplayStyle.None;
-            differentButtons.style.display = DisplayStyle.Flex;
-
-            var copyLeftButton = element.Q<Button>("copy-left-button");
-
-            if (operation.leftHand.IsReadonly)
-            {
-                copyLeftButton.style.display = DisplayStyle.None;
-            }
-            else
-            {
-                copyLeftButton.clicked += () =>
-                {
-                    Copy(operation.rightHand, operation.leftHand);
-
-                    changed?.Invoke(index);
-                };
-            }
-
-            var copyRightButton = element.Q<Button>("copy-right-button");
-            if (operation.rightHand.IsReadonly)
-            {
-                copyRightButton.style.display = DisplayStyle.None;
-            }
-            else
-            {
-                copyRightButton.clicked += () =>
-                {
-                    Copy(operation.leftHand, operation.rightHand);
-
-                    changed?.Invoke(index);
-                };
-            }
+            compareOperationField.dataSource = operation;
+            compareOperationField.Rebuild(() => changed?.Invoke(index));
         };
-    }
-
-    private void Copy(CompareOperand source, CompareOperand destination)
-    {
-        destination.Value = source.Value;
     }
     #endregion
 }
