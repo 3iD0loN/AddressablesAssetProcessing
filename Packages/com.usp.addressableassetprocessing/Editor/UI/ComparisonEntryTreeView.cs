@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Vml.Office;
 using System.Collections.Generic;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
+using UnityEngine.tvOS;
 using UnityEngine.UIElements;
 
 using USP.AddressablesAssetProcessing;
@@ -11,28 +12,28 @@ using USP.AddressablesAssetProcessing;
 public partial class ComparisonEntryTreeView : MultiColumnTreeView
 {
     #region Static Methods
-    public static List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> Pack(IEnumerable<ComparisonEntry> comparisonEntries)
+    public static List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> Pack(IEnumerable<ComparisonEntry> comparisonEntries, bool isExpanded = true, bool isChildrenExpanded = true)
     {
         var result = new List<TreeViewItemData<TreeViewElement<ComparisonEntry>>>();
         foreach (var comparisonEntry in comparisonEntries)
         {
-            var item = Pack(comparisonEntry);
+            var item = Pack(comparisonEntry, isExpanded, isChildrenExpanded);
             result.Add(item);
         }
 
         return result;
     }
 
-    public static TreeViewItemData<TreeViewElement<ComparisonEntry>> Pack(ComparisonEntry comparisonEntry)
+    public static TreeViewItemData<TreeViewElement<ComparisonEntry>> Pack(ComparisonEntry comparisonEntry, bool isExpanded = true, bool isChildrenExpanded = true)
     {
         List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> childItems = null;
         if (comparisonEntry.children != null)
         {
-            childItems = Pack(comparisonEntry.children);
+            childItems = Pack(comparisonEntry.children, isChildrenExpanded, isChildrenExpanded);
         }
 
-        return new TreeViewItemData<TreeViewElement<ComparisonEntry>>(comparisonEntry.GetHashCode(),
-            new TreeViewElement<ComparisonEntry>(true, comparisonEntry), childItems);
+        var data = new TreeViewElement<ComparisonEntry>(isExpanded, comparisonEntry);
+        return new TreeViewItemData<TreeViewElement<ComparisonEntry>>(comparisonEntry.GetHashCode(), data, childItems);
     }
 
     private static StyleLength Add(StyleLength leftHand, StyleLength rightHand)
@@ -262,7 +263,6 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
             }
 
             var copyRightButton = element.Q<Button>("copy-right-button");
-
             if (operation.rightHand.IsReadonly)
             {
                 copyRightButton.style.display = DisplayStyle.None;

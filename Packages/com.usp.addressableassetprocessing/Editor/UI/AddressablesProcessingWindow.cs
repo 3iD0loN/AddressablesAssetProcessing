@@ -8,6 +8,7 @@ using UnityEditor.AddressableAssets.Settings;
 
 using USP.AddressablesAssetProcessing;
 using USP.MetaAddressables;
+using static USP.MetaAddressables.MetaAddressables;
 
 public abstract class AddressablesProcessingWindow : EditorWindow
 {
@@ -123,6 +124,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             IEnumerable<TreeViewItemData<TreeViewElement<Asset>>> selectedItems = mainTreeView.GetSelectedItems<TreeViewElement<Asset>>();
 
             ComparisonEntryTreeView comparisonEntryTreeView = selectedState.Q<ComparisonEntryTreeView>("comparison-entry");
+
             System.Action rebuildComparisonEntryTreeView = () =>
             {
                 var comparisonEntries = new HashSet<ComparisonEntry>();
@@ -146,42 +148,24 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 
             };
             rebuildComparisonEntryTreeView();
-            comparisonEntryTreeView.changed += (int index) =>
+            comparisonEntryTreeView.changed += (int selectedIndex) =>
             {
-                var comparisonEntries = new HashSet<ComparisonEntry>();
-                foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
+                int rootParentId = TreeViewExtensions.FindRootItemIdByIndex(comparisonEntryTreeView, selectedIndex);
+
+                TreeViewElement<ComparisonEntry> oldComparisonEntryItem = comparisonEntryTreeView.GetItemDataForId<TreeViewElement<ComparisonEntry>>(rootParentId);
+                string assetFilePath = oldComparisonEntryItem.Value.entryName;
+
+                Asset.ByComparisonEntryAssetPath.TryGetValue(assetFilePath, out Asset asset);
+
+                asset.Compare(true);
+
+                var comparisonEntries = asset.ComparisonEntries;
+                foreach (var comparisonEntry in comparisonEntries)
                 {
-                    Asset selectedAsset = selectedItem.data.Value;
-                    selectedAsset.Compare(true);
-                    var selectedComparisonEntries = selectedAsset.ComparisonEntries;
-                    if (selectedComparisonEntries == null)
-                    {
-                        continue;
-                    }
-
-                    comparisonEntries.UnionWith(selectedComparisonEntries);
+                    TreeViewItemData<TreeViewElement<ComparisonEntry>> comparisonEntryItem = ComparisonEntryTreeView.Pack(comparisonEntry);
+                    TreeViewExtensions.ReplaceItem(comparisonEntryTreeView, rootParentId, comparisonEntryItem);
+                    TreeViewExtensions.ExpandItem(comparisonEntryTreeView, comparisonEntryItem, true);
                 }
-
-                /*/
-                int id = comparisonEntryTreeView.viewController.GetIdForIndex(index);
-                int rootParentId = id;
-                while (id != -1)
-                {
-                    rootParentId = id;
-                    id = comparisonEntryTreeView.viewController.GetParentId(id);
-                }
-
-                TreeViewElement<ComparisonEntry> userDataEntry = comparisonEntryTreeView.GetItemDataForId<TreeViewElement<ComparisonEntry>>(rootParentId);
-
-                var userDataEntryItem = ComparisonEntryTreeView.Pack(userDataEntry.Value);
-                TreeViewExtensions.ReplaceItem(comparisonEntryTreeView, userDataEntryItem);
-                //*/
-
-                List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries);
-
-                comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
-                TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
-                comparisonEntryTreeView.Rebuild();
             };
 
             FocusActions focusActions = selectedState.Q<FocusActions>("focus-actions");

@@ -3,6 +3,8 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using System.Diagnostics;
+    using UnityEditor.IMGUI.Controls;
     using UnityEngine.UIElements;
     using USP.MetaAddressables;
 
@@ -166,9 +168,15 @@ namespace USP.AddressablesAssetProcessing
 
     public class Asset
     {
+        #region Static Methods
         private static Dictionary<string, ComparisonEntry> ComparisonEntriesByAsset = new Dictionary<string, ComparisonEntry>();
 
         private static Dictionary<string, MetaAddressables.UserData> ProcessedDataByAssetPath = new Dictionary<string, MetaAddressables.UserData>();
+
+        public static Dictionary<string, Asset> ByComparisonEntryAssetPath = new Dictionary<string, Asset>();
+
+        public static Dictionary<string, Asset> ByProcessedDataAssetPath = new Dictionary<string, Asset>();
+        #endregion
 
         #region Fields
         internal Folder parent;
@@ -286,36 +294,39 @@ namespace USP.AddressablesAssetProcessing
             }
         }
 
-        public virtual void ProcessRules()
+        public virtual void ProcessRules(bool overwrite = false)
         {
             if (!IsEnabled)
             {
                 return;
             }
 
-            // Attempt to find whether a entry associated with the asset path already exists in the global cache.
-            bool found = ProcessedDataByAssetPath.TryGetValue(RuleProcessor.AssetFilePath, out MetaAddressables.UserData userData);
-
-            // If there is an entry associated with the asset path, then:
-            if (found)
+            if (!overwrite)
             {
-                // Do nothing else.
-                return;
+                // Attempt to find whether a entry associated with the asset path already exists in the global cache.
+                bool found = ProcessedDataByAssetPath.TryGetValue(RuleProcessor.AssetFilePath, out MetaAddressables.UserData userData);
+
+                // If there is an entry associated with the asset path, then:
+                if (found)
+                {
+                    // Do nothing else.
+                    return;
+                }
             }
 
             // Process the rules to create a new entry.
             RuleProcessor.ProcessRules();
 
-            userData = RuleProcessor.ProcessedData;
-
             // Associate the new entry with the asset path.
-            ProcessedDataByAssetPath.Add(RuleProcessor.AssetFilePath, userData);
+            ProcessedDataByAssetPath[RuleProcessor.AssetFilePath] = RuleProcessor.ProcessedData;
+
+            ByProcessedDataAssetPath[RuleProcessor.AssetFilePath] = this;
 
             // Let the parent folders know that they should recache their processed data.
             IsProcessDirty = true;
         }
 
-        public virtual void Compare(bool overwrite)
+        public virtual void Compare(bool overwrite = false)
         {
             if (!IsEnabled)
             {
@@ -342,6 +353,8 @@ namespace USP.AddressablesAssetProcessing
             ComparisonEntryFactory.Create();
 
             ComparisonEntriesByAsset[ComparisonEntryFactory.AssetFilePath] = ComparisonEntryFactory.ComparisonEntry;
+
+            ByComparisonEntryAssetPath[ComparisonEntryFactory.AssetFilePath] = this;
 
             // Let the parent folders know that they should recache their comparison data.
             IsCompareDirty = true;
@@ -466,7 +479,7 @@ namespace USP.AddressablesAssetProcessing
             }
         }
 
-        public override void ProcessRules()
+        public override void ProcessRules(bool overwrite = false)
         {
             if (!IsEnabled)
             {
@@ -475,11 +488,11 @@ namespace USP.AddressablesAssetProcessing
 
             foreach (Asset asset in Children)
             {
-                asset.ProcessRules();
+                asset.ProcessRules(overwrite);
             }
         }
 
-        public override void Compare(bool overwrite)
+        public override void Compare(bool overwrite = false)
         {
             if (!IsEnabled)
             {
@@ -539,32 +552,53 @@ namespace USP.AddressablesAssetProcessing
             {
                 treeView.AddItem(item, parentId, childIndex, rebuildTree);
             }
-
-            AddUniqueItems(treeView, item.id, item.children, childIndex, rebuildTree);
         }
 
         public static void AddUniqueItems<T>(BaseTreeView treeView, int parentId, IEnumerable<TreeViewItemData<T>> items, int childIndex = -1, bool rebuildTree = true)
         {
-            foreach (var item in items)
+            var childItems = new List<TreeViewItemData<T>>(items);
+            foreach (var item in childItems)
             {
                 AddUniqueItem(treeView, parentId, item, childIndex, rebuildTree);
             }
         }
 
-        public static void ReplaceItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, int parentId = -1, int childIndex = -1, bool rebuildTree = true)
+        public static int FindRootItemIdByIndex(BaseTreeView treeView, int index)
         {
-            treeView.TryRemoveItem(item.id, false);
-            treeView.AddItem(item, parentId, childIndex, rebuildTree);
+            int id = treeView.viewController.GetIdForIndex(index);
 
-            //ReplaceItems(treeView, item.children, item.id, childIndex, rebuildTree);
+            return FindRootItemIdById(treeView, id);
         }
 
-        public static void ReplaceItems<T>(BaseTreeView treeView, IEnumerable<TreeViewItemData<T>> items, int parentId = -1, int childIndex = -1, bool rebuildTree = true)
+        public static int FindRootItemIdById(BaseTreeView treeView, int id)
         {
-            //foreach (var item in items)
-            //{
-            //    ReplaceItem(treeView, item, parentId, childIndex, rebuildTree);
-            //}
+            int nextId = treeView.viewController.GetParentId(id);
+
+            if (nextId == -1)
+            {
+                return id;
+            }
+
+            return FindRootItemIdById(treeView, nextId);
+        }
+
+        public static void ReplaceItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, int parentId = -1, int childIndex = -1, bool rebuildTree = true)
+        {
+            ReplaceItem(treeView, item.id, item, parentId, childIndex, rebuildTree);
+        }
+
+        public static void ReplaceItem<T>(BaseTreeView treeView, int oldId, TreeViewItemData<T> item, int parentId = -1, int childIndex = -1, bool rebuildTree = true)
+        {
+            if (childIndex == -1)
+            {
+                childIndex = treeView.viewController.GetIndexForId(oldId);
+            }
+            
+            bool removed = treeView.TryRemoveItem(oldId, true);
+            if (removed)
+            {
+                AddUniqueItem(treeView, parentId, item, childIndex, rebuildTree);
+            }
         }
 
         public static void ExpandItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, bool shouldRefresh)
