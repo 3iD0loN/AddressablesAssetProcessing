@@ -153,8 +153,6 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             rebuildComparisonEntryTreeView();
             comparisonEntryTreeView.changed += (int selectedIndex) =>
             {
-                UnityEngine.Debug.Log($"index: {selectedIndex}");
-
                 bool isAssetView = true;
                 foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
                 {
