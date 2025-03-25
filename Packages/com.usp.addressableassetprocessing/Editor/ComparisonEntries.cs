@@ -8,7 +8,6 @@ using System.Reflection;
 namespace USP.AddressablesAssetProcessing
 {
     using UnityEditor.AddressableAssets.Settings;
-    using UnityEditorInternal;
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
     using IData = IDictionary<string, USP.MetaAddressables.MetaAddressables.UserData>;
@@ -96,27 +95,28 @@ namespace USP.AddressablesAssetProcessing
 
     public struct CompareOperation
     {
-        public IPropertyComparer comparer { get; }
-
         public CompareOperand leftHand { get; }
 
         public CompareOperand rightHand { get; }
 
         public bool result { get; }
 
-        public CompareOperation(IPropertyComparer comparer, CompareOperand leftHand, CompareOperand rightHand)
+        public CompareOperation(IPropertyComparer comparer, CompareOperand leftHand, CompareOperand rightHand) :
+            this(leftHand, rightHand, Operate(comparer, leftHand, rightHand))
         {
-            this.comparer = comparer;
-            this.leftHand = leftHand;
-            this.rightHand = rightHand;
-            result = false;
-            this.result = Operate(this);
         }
 
-        public static bool Operate(CompareOperation operation)
+        public CompareOperation(CompareOperand leftHand, CompareOperand rightHand, bool result)
         {
-            var leftHash = operation.leftHand.Value != null ? operation.comparer.GetHashCode(operation.leftHand.Value) : 0;
-            var rightHash = operation.rightHand.Value != null ? operation.comparer.GetHashCode(operation.rightHand.Value) : 0;
+            this.leftHand = leftHand;
+            this.rightHand = rightHand;
+            this.result = result;
+        }
+
+        public static bool Operate(IPropertyComparer comparer, CompareOperand leftHand, CompareOperand rightHand)
+        {
+            var leftHash = leftHand.Value != null ? comparer.GetHashCode(leftHand.Value) : 0;
+            var rightHash = rightHand.Value != null ? comparer.GetHashCode(rightHand.Value) : 0;
 
             return leftHash == rightHash;
         }
