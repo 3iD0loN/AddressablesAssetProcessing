@@ -604,7 +604,14 @@ namespace USP.AddressablesAssetProcessing
         public static void ExpandItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, bool shouldRefresh)
             where T : TreeViewElement
         {
-            treeView.ExpandItem(item.id, item.data.IsExpanded, shouldRefresh);
+            if (item.data.IsExpanded)
+            {
+                treeView.ExpandItem(item.id, false, shouldRefresh);
+            }
+            else
+            {
+                treeView.CollapseItem(item.id, false, shouldRefresh);
+            }
 
             ExpandItems(treeView, item.children, shouldRefresh);
         }

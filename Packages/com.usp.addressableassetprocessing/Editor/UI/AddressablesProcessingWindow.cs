@@ -127,10 +127,12 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
             System.Action rebuildComparisonEntryTreeView = () =>
             {
+                bool isAssetView = true;
                 var comparisonEntries = new HashSet<ComparisonEntry>();
                 foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
                 {
                     Asset selectedAsset = selectedItem.data.Value;
+                    isAssetView &= selectedAsset is not Folder;
                     selectedAsset.Compare(false);
                     var selectedComparisonEntries = selectedAsset.ComparisonEntries;
                     if (selectedComparisonEntries == null)
@@ -140,7 +142,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
                     comparisonEntries.UnionWith(selectedComparisonEntries);
                 }
-                List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries);
+                List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries, isAssetView, true);
 
                 comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
                 TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
@@ -150,6 +152,13 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             rebuildComparisonEntryTreeView();
             comparisonEntryTreeView.changed += (int selectedIndex) =>
             {
+                bool isAssetView = true;
+                foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
+                {
+                    Asset selectedAsset = selectedItem.data.Value;
+                    isAssetView &= selectedAsset is not Folder;
+                }
+
                 int rootParentId = TreeViewExtensions.FindRootItemIdByIndex(comparisonEntryTreeView, selectedIndex);
 
                 TreeViewElement<ComparisonEntry> oldComparisonEntryItem = comparisonEntryTreeView.GetItemDataForId<TreeViewElement<ComparisonEntry>>(rootParentId);
@@ -162,7 +171,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                 var comparisonEntries = asset.ComparisonEntries;
                 foreach (var comparisonEntry in comparisonEntries)
                 {
-                    TreeViewItemData<TreeViewElement<ComparisonEntry>> comparisonEntryItem = ComparisonEntryTreeView.Pack(comparisonEntry);
+                    TreeViewItemData<TreeViewElement<ComparisonEntry>> comparisonEntryItem = ComparisonEntryTreeView.Pack(comparisonEntry, isAssetView, true);
                     TreeViewExtensions.ReplaceItem(comparisonEntryTreeView, rootParentId, comparisonEntryItem);
                     TreeViewExtensions.ExpandItem(comparisonEntryTreeView, comparisonEntryItem, true);
                 }
