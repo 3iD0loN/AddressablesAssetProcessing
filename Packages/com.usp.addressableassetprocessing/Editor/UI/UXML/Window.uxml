@@ -9,7 +9,7 @@
                 </ui:Columns>
             </ui:MultiColumnTreeView>
         </ui:VisualElement>
-        <ui:VisualElement name="selected-processing-state" />
+        <AssetField name="selected-processing-state" />
     </ui:TwoPaneSplitView>
     <ui:Button name="deduplicate-all-button" text="Deduplicate All Implicit Assets" enabled="false" />
 </ui:UXML>

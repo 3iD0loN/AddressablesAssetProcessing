@@ -78,8 +78,6 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         };
         //*/
 
-        var assetStateUxml = FileHelper.LoadRequired<VisualTreeAsset>("UXML\\AssetState.uxml");
-
         /*/
         Column enabledColumn = mainTreeView.columns["enabled"];
         enabledColumn.makeCell = () => new Toggle();
@@ -96,7 +94,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             toggle.RegisterCallback<ChangeEvent<bool>>(@event => state.Value.IsEnabled = @event.newValue);
         };
         //*/
-        
+
         Column pathColumn = mainTreeView.columns["path"];
         pathColumn.makeCell = () => new Label();
         pathColumn.bindCell = (VisualElement element, int index) =>
@@ -115,90 +113,28 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         deduplicateButton.clicked += OnDeduplicateAssets;
 
-        var selectedState = rootVisualElement.Q<VisualElement>("selected-processing-state");
         mainTreeView.itemsChosen += (notUsed_selectedItems) =>
         {
-            selectedState.Clear();
-            assetStateUxml.CloneTree(selectedState);
+            var selectedAsset = rootVisualElement.Q<AssetField>("selected-processing-state");
 
             IEnumerable<TreeViewItemData<TreeViewElement<Asset>>> selectedItems = mainTreeView.GetSelectedItems<TreeViewElement<Asset>>();
-
-            ComparisonEntryTreeView comparisonEntryTreeView = selectedState.Q<ComparisonEntryTreeView>("comparison-entry");
-
-            System.Action rebuildComparisonEntryTreeView = () =>
-            {
-                bool isAssetView = true;
-                var comparisonEntries = new HashSet<ComparisonEntry>();
-                foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
-                {
-                    Asset selectedAsset = selectedItem.data.Value;
-                    isAssetView &= selectedAsset is not Folder;
-                    selectedAsset.Compare(false);
-                    var selectedComparisonEntries = selectedAsset.ComparisonEntries;
-                    if (selectedComparisonEntries == null)
-                    {
-                        continue;
-                    }
-
-                    comparisonEntries.UnionWith(selectedComparisonEntries);
-                }
-                List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries, isAssetView, true);
-
-                comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
-                TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
-                comparisonEntryTreeView.Rebuild();
-                
-            };
-
-            rebuildComparisonEntryTreeView();
-            comparisonEntryTreeView.changed += (int selectedIndex) =>
-            {
-                bool isAssetView = true;
-                foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in selectedItems)
-                {
-                    Asset selectedAsset = selectedItem.data.Value;
-                    isAssetView &= selectedAsset is not Folder;
-                }
-
-                int rootParentId = TreeViewExtensions.FindRootItemIdByIndex(comparisonEntryTreeView, selectedIndex);
-
-                TreeViewElement<ComparisonEntry> oldComparisonEntryItem = comparisonEntryTreeView.GetItemDataForId<TreeViewElement<ComparisonEntry>>(rootParentId);
-                string assetFilePath = oldComparisonEntryItem.Value.entryName;
-
-                Asset.ByComparisonEntryAssetPath.TryGetValue(assetFilePath, out Asset asset);
-
-                asset.Compare(true);
-
-                var comparisonEntries = asset.ComparisonEntries;
-                foreach (var comparisonEntry in comparisonEntries)
-                {
-                    TreeViewItemData<TreeViewElement<ComparisonEntry>> comparisonEntryItem = ComparisonEntryTreeView.Pack(comparisonEntry, isAssetView, true);
-                    TreeViewExtensions.ReplaceItem(comparisonEntryTreeView, rootParentId, comparisonEntryItem);
-                    TreeViewExtensions.ExpandItem(comparisonEntryTreeView, comparisonEntryItem, true);
-                }
-            };
-
-            FocusActions focusActions = selectedState.Q<FocusActions>("focus-actions");
-            focusActions.dataSource = new List<TreeViewItemData<TreeViewElement<Asset>>>(selectedItems);
-            focusActions.changed += (bool elementsChanged, int collectedCount, int processedCount) =>
+            selectedAsset.dataSource = selectedItems;
+            selectedAsset.Rebuild();
+            selectedAsset.changed += (bool elementsChanged, int collectedCount, int processedCount) =>
             {
                 // If the elements that were focused on in the tree view were modified by the actions, then:
                 if (elementsChanged)
                 {
-                    // For every item that was seleceted, perform the following:
-                    foreach (var selectedItem in focusActions.dataSource)
+                    // For every item that was selected, perform the following:
+                    foreach (var selectedItem in selectedAsset.dataSource)
                     {
                         // Add the child items under the the selected item in the tree view.
                         TreeViewExtensions.AddUniqueItems(mainTreeView, selectedItem.id, selectedItem.children);
                     }
                 }
 
-                /// Rebuild the comparison tree view elements if they need to be rebuilt.
-                rebuildComparisonEntryTreeView();
-
                 deduplicateButton.SetEnabled(collectedCount != 0 && processedCount != 0);
             };
-            focusActions.Rebuild();
         };
     }
 
