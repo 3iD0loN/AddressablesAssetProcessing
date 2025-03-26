@@ -12,6 +12,8 @@ namespace USP.AddressablesAssetProcessing
 
     public class AddressablesDeduplicator
     {
+        public const string DeduplicatedKey = "Shared Resources";
+
         #region Types
         private class GroupExtractor : IExtractor<AssetInfo, AddressableAssetGroupTemplate>
         {
@@ -90,7 +92,7 @@ namespace USP.AddressablesAssetProcessing
             #region Methods
             public void Extract(AssetInfo asset, ref HashSet<string> result)
             {
-                result.Add("Shared Resources");
+                result.Add(DeduplicatedKey);
                 foreach (AssetInfo dependentAsset in asset.DependentAssets)
                 {
                     result.UnionWith(dependentAsset.Labels);
