@@ -44,6 +44,12 @@ public partial class AssetField : VisualElement
             {
                 Asset selectedAsset = selectedItem.data.Value;
                 isAssetView &= selectedAsset is not Folder;
+
+                if (selectedAsset.ProcessedData.Count == 0)
+                {
+                    continue;
+                }
+
                 selectedAsset.Compare(false);
 
                 var selectedComparisonEntries = selectedAsset.ComparisonEntries;
@@ -122,10 +128,10 @@ public partial class AssetField : VisualElement
         focusActions.dataSource = new List<TreeViewItemData<TreeViewElement<Asset>>>(dataSource);
         focusActions.changed += (bool elementsChanged, int collectedCount, int processedCount) =>
         {
+            changed?.Invoke(elementsChanged, collectedCount, processedCount);
+
             // Rebuild the comparison tree view elements if they need to be rebuilt.
             rebuildComparisonEntryTreeView();
-
-            changed?.Invoke(elementsChanged, collectedCount, processedCount);
         };
         focusActions.Rebuild();
     }
