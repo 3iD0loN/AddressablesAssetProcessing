@@ -66,7 +66,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         List<Folder> folders = BuildFolderStates(addressablesAssetStore);
         
         MultiColumnTreeView mainTreeView = rootVisualElement.Q<MultiColumnTreeView>("main-tree-view");
-        List<TreeViewItemData<TreeViewElement<Asset>>> folderItems = FocusActions.Pack(folders);
+        List<TreeViewItemData<TreeViewElement<Asset>>> folderItems = AssetField.Pack(folders);
         mainTreeView.SetRootItems(folderItems);
         TreeViewExtensions.ExpandItems(mainTreeView, folderItems, true);
 

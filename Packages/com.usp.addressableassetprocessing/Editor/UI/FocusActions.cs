@@ -9,33 +9,6 @@ using static AddressablesProcessingWindow;
 [UxmlElement("FocusActions")]
 public partial class FocusActions : VisualElement
 {
-    #region Static
-    public static List<TreeViewItemData<TreeViewElement<Asset>>> Pack(IEnumerable<Asset> assets)
-    {
-        var result = new List<TreeViewItemData<TreeViewElement<Asset>>>();
-        foreach (Asset asset in assets)
-        {
-            TreeViewItemData<TreeViewElement<Asset>> item = Pack(asset);
-            result.Add(item);
-        }
-
-        return result;
-    }
-
-    public static TreeViewItemData<TreeViewElement<Asset>> Pack(Asset asset)
-    {
-        List<TreeViewItemData<TreeViewElement<Asset>>> childItems = null;
-        if (asset is Folder folderState)
-        {
-            childItems = Pack(folderState.Children);
-        }
-
-        var item = new TreeViewElement<Asset>(true, asset);
-        return new TreeViewItemData<TreeViewElement<Asset>>(asset.Id.GetHashCode(), item, childItems);
-    }
-
-    #endregion
-
     #region Fields
     private readonly VisualTreeAsset focusActionsUxml;
 
@@ -75,7 +48,7 @@ public partial class FocusActions : VisualElement
         {
             IdentifySelectedAssets(dataSource);
 
-            UpdateVisual(false, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+            UpdateVisual(true, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
         };
 
         processTargetButton.clicked += () =>
@@ -154,7 +127,7 @@ public partial class FocusActions : VisualElement
             selectedFolder.Identify();
 
             // Overwrite this item with an item that has children.
-            selectedAssets[i] = Pack(selectedFolder);
+            selectedAssets[i] = AssetField.Pack(selectedFolder);
         }
     }
 

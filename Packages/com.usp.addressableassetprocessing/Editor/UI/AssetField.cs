@@ -11,6 +11,32 @@ using USP.MetaAddressables;
 [UxmlElement("AssetField")]
 public partial class AssetField : VisualElement
 {
+    #region Static Methods
+    public static List<TreeViewItemData<TreeViewElement<Asset>>> Pack(IEnumerable<Asset> assets)
+    {
+        var result = new List<TreeViewItemData<TreeViewElement<Asset>>>();
+        foreach (Asset asset in assets)
+        {
+            TreeViewItemData<TreeViewElement<Asset>> item = Pack(asset);
+            result.Add(item);
+        }
+
+        return result;
+    }
+
+    public static TreeViewItemData<TreeViewElement<Asset>> Pack(Asset asset)
+    {
+        List<TreeViewItemData<TreeViewElement<Asset>>> childItems = null;
+        if (asset is Folder folderState)
+        {
+            childItems = Pack(folderState.Children);
+        }
+
+        var item = new TreeViewElement<Asset>(true, asset);
+        return new TreeViewItemData<TreeViewElement<Asset>>(asset.Id.GetHashCode(), item, childItems);
+    }
+    #endregion
+
     #region Fields
     private readonly VisualTreeAsset assetFieldUxml;
     #endregion
