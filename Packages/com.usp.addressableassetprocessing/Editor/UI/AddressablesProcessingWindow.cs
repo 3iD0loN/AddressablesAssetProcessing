@@ -120,16 +120,16 @@ public abstract class AddressablesProcessingWindow : EditorWindow
             IEnumerable<TreeViewItemData<TreeViewElement<Asset>>> selectedItems = mainTreeView.GetSelectedItems<TreeViewElement<Asset>>();
             selectedAsset.dataSource = selectedItems;
             selectedAsset.Rebuild();
-            selectedAsset.changed += (bool elementsChanged, int collectedCount, int processedCount) =>
+            selectedAsset.changed += (IList<TreeViewItemData<TreeViewElement<Asset>>> changedElements, int collectedCount, int processedCount) =>
             {
                 // If the elements that were focused on in the tree view were modified by the actions, then:
-                if (elementsChanged)
+                if (changedElements != null)
                 {
                     // For every item that was selected, perform the following:
-                    foreach (var selectedItem in selectedAsset.dataSource)
+                    foreach (var changedElement in changedElements)
                     {
                         // Add the child items under the the selected item in the tree view.
-                        TreeViewExtensions.AddUniqueItems(mainTreeView, selectedItem.id, selectedItem.children);
+                        TreeViewExtensions.AddUniqueItems(mainTreeView, changedElement.id, changedElement.children);
                     }
                 }
 

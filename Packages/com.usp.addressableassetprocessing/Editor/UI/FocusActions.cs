@@ -47,7 +47,7 @@ public partial class FocusActions : VisualElement
     #endregion
 
     #region Events
-    public event Action<bool, int, int> changed;
+    public event Action<IList<TreeViewItemData<TreeViewElement<Asset>>>, int, int> changed;
     #endregion
 
     #region Methods
@@ -75,7 +75,7 @@ public partial class FocusActions : VisualElement
         {
             IdentifySelectedAssets(dataSource);
 
-            UpdateVisual(true, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
+            UpdateVisual(false, collectTargetButton, processTargetButton, collectAndProcessTargetButton);
         };
 
         processTargetButton.clicked += () =>
@@ -113,7 +113,7 @@ public partial class FocusActions : VisualElement
         processTargetButton.style.display = Show(collectedCount != 0 && processedCount == 0);
         collectAndProcessTargetButton.style.display = Show(collectedCount == 0);
 
-        changed?.Invoke(elementsChanged, collectedCount, processedCount);
+        changed?.Invoke(elementsChanged ? dataSource : null, collectedCount, processedCount);
     }
 
     private string GetName()

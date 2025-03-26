@@ -20,7 +20,7 @@ public partial class AssetField : VisualElement
     #endregion
 
     #region Events
-    public event Action<bool, int, int> changed;
+    public event Action<IList<TreeViewItemData<TreeViewElement<Asset>>>, int, int> changed;
     #endregion
 
     #region Methods
@@ -132,9 +132,9 @@ public partial class AssetField : VisualElement
 
         FocusActions focusActions = this.Q<FocusActions>("focus-actions");
         focusActions.dataSource = new List<TreeViewItemData<TreeViewElement<Asset>>>(dataSource);
-        focusActions.changed += (bool elementsChanged, int collectedCount, int processedCount) =>
+        focusActions.changed += (IList<TreeViewItemData<TreeViewElement<Asset>>> changedElements, int collectedCount, int processedCount) =>
         {
-            changed?.Invoke(elementsChanged, collectedCount, processedCount);
+            changed?.Invoke(changedElements, collectedCount, processedCount);
 
             // Rebuild the comparison tree view elements if they need to be rebuilt.
             rebuildComparisonEntryTreeView();
