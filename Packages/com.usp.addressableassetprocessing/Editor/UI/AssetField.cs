@@ -102,6 +102,12 @@ public partial class AssetField : VisualElement
                 foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in dataSource)
                 {
                     Asset selectedAsset = selectedItem.data.Value;
+                    
+                    if (selectedAsset.ProcessedData.Count == 0)
+                    {
+                        continue;
+                    }
+
                     selectedAsset.Compare(true);
 
                     var selectedComparisonEntries = selectedAsset.ComparisonEntries;
