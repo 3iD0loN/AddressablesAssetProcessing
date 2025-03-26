@@ -55,7 +55,7 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Properties
-        public bool IsReadonly => setter == null;
+        public bool IsReadOnly => setter == null;
 
         public object Value
         {
@@ -139,14 +139,117 @@ namespace USP.AddressablesAssetProcessing
 
     public class ComparisonEntries
     {
+        #region Constants
         private const string ProcessingDataKey = "processing-data";
 
         private const string MetafileDataKey = "metafile-data";
 
         private const string AddressablesDataKey = "addressables-data";
-
+        
         private static UserDataComparer userDataComparer = new UserDataComparer();
+        #endregion
 
+        #region Methods
+        #region Create All Entries Parent
+        public static IEnumerable<ComparisonEntry> CreateEntry(IEnumerable<ComparisonEntry> comparisonEntries)
+        {
+            var result = new ComparisonEntry();
+            result.entryName = "All Entries";
+            result.entryType = typeof(IEnumerable<ComparisonEntry>);
+            result.compareTargets = PopulateTargets(comparisonEntries);
+            result.compareOperations = PopulateCompare(comparisonEntries);
+            result.children = comparisonEntries;
+
+            return new[] { result };
+        }
+
+        private static IReadOnlyDictionary<string, CompareOperand> PopulateTargets(IEnumerable<ComparisonEntry> comparisonEntries)
+        {
+            var result = new Dictionary<string, CompareOperand>();
+
+            // For every comparison entry passed in, perform the following:
+            foreach (ComparisonEntry comparisonEntry in comparisonEntries)
+            {
+                // For every compare operation, perform the following:
+                foreach ((string key, CompareOperand operation) in comparisonEntry.compareTargets)
+                {
+                    result[key] = null;
+                }
+            }
+
+            return result;
+        }
+
+        private static IReadOnlyDictionary<string, CompareOperation> PopulateCompare(IEnumerable<ComparisonEntry> comparisonEntries)
+        {
+            var operationDataByComparsons = new Dictionary<string, (bool, (bool, List<CompareOperand>), (bool, List<CompareOperand>))>();
+
+            // For every comparison entry passed in, perform the following:
+            foreach (ComparisonEntry comparisonEntry in comparisonEntries)
+            {
+                // For every compare operation, perform the following:
+                foreach ((string key, CompareOperation operation) in comparisonEntry.compareOperations)
+                {
+                    if (!operationDataByComparsons.TryGetValue(key, out (bool isSame, (bool isReadOnly, List<CompareOperand> operands) leftHand, (bool isReadOnly, List<CompareOperand> operands) rightHand) value))
+                    {
+                        value = (true, (operation.leftHand.IsReadOnly, new List<CompareOperand>()), (operation.rightHand.IsReadOnly, new List<CompareOperand>()));
+                        operationDataByComparsons.Add(key, value);
+                    }
+
+                    if (value.isSame)
+                    {
+                        value.isSame &= operation.result;
+                    }
+
+                    if (operation.result == false)
+                    {
+                        value.leftHand.operands.Add(operation.leftHand);
+                        value.rightHand.operands.Add(operation.rightHand);
+                    }
+
+                    operationDataByComparsons[key] = value;
+                }
+            }
+
+            var result = new Dictionary<string, CompareOperation>(operationDataByComparsons.Count);
+            foreach ((string key, (bool isSame, (bool isReadOnly, List<CompareOperand> operands) leftHand, (bool isReadOnly, List<CompareOperand> operands) rightHand)) in operationDataByComparsons)
+            {
+                var lhs = new CompareOperand(null, leftHand.operands, Get, leftHand.isReadOnly ? null : Set);
+                var rhs = new CompareOperand(null, rightHand.operands, Get, rightHand.isReadOnly ? null : Set);
+                result[key] = new CompareOperation(lhs, rhs, isSame);
+            }
+
+            return result;
+        }
+
+        private static object Get(object target)
+        {
+            return target;
+        }
+
+        private static void Set(object destination, object source)
+        {
+            Set(source as List<CompareOperand>, destination as List<CompareOperand>);
+        }
+
+        private static void Set(List<CompareOperand> source, List<CompareOperand> destination)
+        {
+            if (source.Count != destination.Count)
+            {
+                return;
+            }
+
+            var d = destination.GetEnumerator();
+            var s = source.GetEnumerator();
+
+            while (d.MoveNext() && s.MoveNext())
+            {
+                d.Current.Value = s.Current.Value;
+            }
+        }
+        #endregion
+
+        #region Create UserData Entry
         public static ComparisonEntry CreateEntry(AddressableAssetSettings settings, CombinedAssetApplicator combinedAssetApplicator, string assetFilePath)
         {
             var properties = new Dictionary<string, CompareOperand>(3);
@@ -177,8 +280,8 @@ namespace USP.AddressablesAssetProcessing
 
             Func<object, object> getter = target => Get(target as IReadOnlyData, assetFilePath);
 
-            Action<object, object> setter = !assetApplicator.AssetStore.IsReadOnly ?
-                (target, value) => Set(target as IData, assetFilePath, value as MetaAddressables.UserData): null;
+            Action<object, object> setter = assetApplicator.AssetStore.IsReadOnly ? null :
+                (target, value) => Set(target as IData, assetFilePath, value as MetaAddressables.UserData);
 
             return new CompareOperand(x, dataByAssetPath, getter, setter);
         }
@@ -321,7 +424,7 @@ namespace USP.AddressablesAssetProcessing
                         continue;
                     }
 
-                    Action<object, object> targetPropertySetter = !parentOperand.IsReadonly ? propertySetter : null;
+                    Action<object, object> targetPropertySetter = !parentOperand.IsReadOnly ? propertySetter : null;
 
                     var childOperand = new CompareOperand(parentOperand.x, parentOperand.Value, propertyGetter, targetPropertySetter);
                     properties.Add(key, childOperand);
@@ -375,5 +478,7 @@ namespace USP.AddressablesAssetProcessing
             
             return v;
         }
+        #endregion
+        #endregion
     }
 }

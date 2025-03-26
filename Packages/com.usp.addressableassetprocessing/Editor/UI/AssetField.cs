@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using Unity.Android.Types;
 using UnityEditor.Build.Pipeline;
+using UnityEditor.IMGUI.Controls;
 using UnityEngine.UIElements;
 
 using USP.AddressablesAssetProcessing;
@@ -43,6 +45,7 @@ public partial class AssetField : VisualElement
                 Asset selectedAsset = selectedItem.data.Value;
                 isAssetView &= selectedAsset is not Folder;
                 selectedAsset.Compare(false);
+
                 var selectedComparisonEntries = selectedAsset.ComparisonEntries;
                 if (selectedComparisonEntries == null)
                 {
@@ -52,9 +55,10 @@ public partial class AssetField : VisualElement
                 comparisonEntries.UnionWith(selectedComparisonEntries);
             }
 
-            ComparisonEntry allComparisons = CreateEntry(comparisonEntries);
+            // If the view is for a folder, then add a parent comparison entry that can control how all items are overwritten ar once.
+            IEnumerable<ComparisonEntry> allComparisons = !isAssetView ? ComparisonEntries.CreateEntry(comparisonEntries) : comparisonEntries;
 
-            List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(comparisonEntries, isAssetView, true);
+            List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(allComparisons, true, isAssetView);
 
             comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
             TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
@@ -65,6 +69,7 @@ public partial class AssetField : VisualElement
         rebuildComparisonEntryTreeView();
         comparisonEntryTreeView.changed += (int selectedIndex) =>
         {
+            // Determines whether the asset selected items that are presented by the represent a folder or a single asset.
             bool isAssetView = true;
             foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in dataSource)
             {
@@ -72,21 +77,44 @@ public partial class AssetField : VisualElement
                 isAssetView &= selectedAsset is not Folder;
             }
 
-            int rootParentId = TreeViewExtensions.FindRootItemIdByIndex(comparisonEntryTreeView, selectedIndex);
-
-            TreeViewElement<ComparisonEntry> oldComparisonEntryItem = comparisonEntryTreeView.GetItemDataForId<TreeViewElement<ComparisonEntry>>(rootParentId);
-            string assetFilePath = oldComparisonEntryItem.Value.entryName;
-
-            Asset.ByComparisonEntryAssetPath.TryGetValue(assetFilePath, out Asset asset);
-
-            asset.Compare(true);
-
-            var comparisonEntries = asset.ComparisonEntries;
-            foreach (var comparisonEntry in comparisonEntries)
+            // If the asset field is focused on a single asset, or the its focused on a folder and the item isn't the first one ("All Entries")
+            if (isAssetView || selectedIndex != 0)
             {
-                TreeViewItemData<TreeViewElement<ComparisonEntry>> comparisonEntryItem = ComparisonEntryTreeView.Pack(comparisonEntry, isAssetView, true);
-                TreeViewExtensions.ReplaceItem(comparisonEntryTreeView, rootParentId, comparisonEntryItem);
-                TreeViewExtensions.ExpandItem(comparisonEntryTreeView, comparisonEntryItem, true);
+                Predicate<TreeViewElement<ComparisonEntry>> match = (TreeViewElement<ComparisonEntry> x) => x.Value.entryType == typeof(MetaAddressables.UserData);
+
+                int rootParentId = TreeViewExtensions.FindFirstRootItemIdByIndex(comparisonEntryTreeView, selectedIndex, match);
+
+                //int rootParentId = TreeViewExtensions.FindRootItemIdByIndex(comparisonEntryTreeView, selectedIndex);
+
+                TreeViewElement<ComparisonEntry> previousComparisonEntryItem = comparisonEntryTreeView.GetItemDataForId<TreeViewElement<ComparisonEntry>>(rootParentId);
+
+                RebuildComparisonEntry(comparisonEntryTreeView, rootParentId, previousComparisonEntryItem, isAssetView);
+            }
+            else if (!isAssetView && selectedIndex == 0)
+            {
+                var comparisonEntries = new HashSet<ComparisonEntry>();
+                foreach (TreeViewItemData<TreeViewElement<Asset>> selectedItem in dataSource)
+                {
+                    Asset selectedAsset = selectedItem.data.Value;
+                    selectedAsset.Compare(true);
+
+                    var selectedComparisonEntries = selectedAsset.ComparisonEntries;
+                    if (selectedComparisonEntries == null)
+                    {
+                        continue;
+                    }
+
+                    comparisonEntries.UnionWith(selectedComparisonEntries);
+                }
+
+                // If the view is for a folder, then add a parent comparison entry that can control how all items are overwritten ar once.
+                IEnumerable<ComparisonEntry> allComparisons = ComparisonEntries.CreateEntry(comparisonEntries);
+
+                List<TreeViewItemData<TreeViewElement<ComparisonEntry>>> comparisonEntryItems = ComparisonEntryTreeView.Pack(allComparisons, true, isAssetView);
+
+                comparisonEntryTreeView.SetRootItems(comparisonEntryItems);
+                TreeViewExtensions.ExpandItems(comparisonEntryTreeView, comparisonEntryItems, true);
+                comparisonEntryTreeView.Rebuild();
             }
         };
 
@@ -94,7 +122,7 @@ public partial class AssetField : VisualElement
         focusActions.dataSource = new List<TreeViewItemData<TreeViewElement<Asset>>>(dataSource);
         focusActions.changed += (bool elementsChanged, int collectedCount, int processedCount) =>
         {
-            /// Rebuild the comparison tree view elements if they need to be rebuilt.
+            // Rebuild the comparison tree view elements if they need to be rebuilt.
             rebuildComparisonEntryTreeView();
 
             changed?.Invoke(elementsChanged, collectedCount, processedCount);
@@ -102,82 +130,31 @@ public partial class AssetField : VisualElement
         focusActions.Rebuild();
     }
 
-    private static ComparisonEntry CreateEntry(HashSet<ComparisonEntry> comparisonEntries)
+    private static void RebuildComparisonEntry(BaseTreeView treeView, int id, TreeViewElement<ComparisonEntry> previousComparisonEntryItem, bool isExpanded)
     {
-        var result = new ComparisonEntry();
-        result.entryName = "All Entries";
-        result.entryType = typeof(HashSet<ComparisonEntry>);
-        result.compareTargets = PopulateTargets(comparisonEntries);
-        result.compareOperations = PopulateCompare(result.compareTargets);
-        result.children = comparisonEntries;
+        // Get the asset path of the previous comparison item.
+        string assetFilePath = previousComparisonEntryItem.Value.entryName;
 
-        return result;
-    }
+        // Attempt to find the asset that was associated with the asset file path for comparisons.
+        Asset.ByComparisonEntryAssetPath.TryGetValue(assetFilePath, out Asset asset);
 
-    private static IReadOnlyDictionary<string, CompareOperand> PopulateTargets(IReadOnlyCollection<ComparisonEntry> comparisonEntries)
-    {
-        var properties = new Dictionary<string, CompareOperand>(3);
-        var operations = new Dictionary<string, CompareOperation>(2);
+        // Rebuild and overwrite the comparison entries associated with the asset.
+        asset.Compare(true);
 
-        foreach (ComparisonEntry comparisonEntry in comparisonEntries)
+        /// For every comparisomn associated with the asset, perform the following:
+        foreach (var comparisonEntry in asset.ComparisonEntries)
         {
-            bool isSame = true;
-            foreach ((string key, CompareOperation operation) in comparisonEntry.compareOperations)
-            {
-                isSame &= operation.result;
+            // Rebuild the presentation data for this entry.
+            TreeViewItemData<TreeViewElement<ComparisonEntry>> comparisonEntryItem = ComparisonEntryTreeView.Pack(comparisonEntry, isExpanded, true);
 
-                if (!operation.result)
-                {
-                    bool found = operations.TryGetValue(key, out CompareOperation allOperations);
-                    if (!found)
-                    {
-                        allOperations = new CompareOperation(null, operandsList, getter, setter);
-                        operations.Add(key, allOperations);
-                    }
-                }
-            }
+            int parentId = treeView.viewController.GetParentId(id);
 
-            foreach ((string key, CompareOperand operand) in comparisonEntry.compareTargets)
-            {
-                bool found = properties.TryGetValue(key, out CompareOperand allOperands);
-                if (!found)
-                {
-                    var operandsList = new List<CompareOperand>(comparisonEntries.Count);
-                    Func<object, object> getter = target => target;
-                    Action<object, object> setter = (target, newValue) =>
-                    {
-                        var destination = target as List<CompareOperand>;
-                        var source = target as List<CompareOperand>;
+            // Replace the item in the tree view hierarchy.
+            TreeViewExtensions.ReplaceItem(treeView, id, comparisonEntryItem, parentId);
 
-                        var d = destination.GetEnumerator();
-                        var s = source.GetEnumerator();
-
-                        while (d.MoveNext() && s.MoveNext())
-                        {
-                            d.Current.Value = s.Current.Value;
-                        }
-                    };
-
-                    allOperands = new CompareOperand(null, operandsList, getter, setter);
-                    properties.Add(key, allOperands);
-                }
-
-                if (allOperands.parentValue is List<CompareOperand> operands)
-                {
-                    operands.Add(operand);
-                }
-            }
-
-            var processingData = compareTargets[ProcessingDataKey];
-            var metafileData = compareTargets[MetafileDataKey];
-            var addressablesData = compareTargets[AddressablesDataKey];
-
-            var result = new Dictionary<string, CompareOperation>(2);
-            result["processing-metafile-compare"] = new CompareOperation(comparer, processingData, metafileData);
-            result["metafile-addressables-compare"] = new CompareOperation(comparer, metafileData, addressablesData);
+            // Set the foldout values.
+            TreeViewExtensions.ExpandItem(treeView, comparisonEntryItem, true);
         }
-
-        return properties;
     }
     #endregion
 }

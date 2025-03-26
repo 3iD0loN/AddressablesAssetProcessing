@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine.UIElements;
+using USP.AddressablesAssetProcessing;
 
 public class TreeViewElement
 {
@@ -74,6 +76,32 @@ public static class TreeViewExtensions
         }
 
         return FindRootItemIdById(treeView, nextId);
+    }
+
+    public static int FindFirstRootItemIdByIndex<T>(BaseTreeView treeView, int index, Predicate<T> match)
+    {
+        int id = treeView.viewController.GetIdForIndex(index);
+
+        return FindFirstRootItemIdById(treeView, id, match);
+    }
+
+    public static int FindFirstRootItemIdById<T>(BaseTreeView treeView, int id, Predicate<T> match)
+    {
+        if (id == -1 || match == null)
+        {
+            return -1;
+        }
+
+        T item = treeView.GetItemDataForId<T>(id);
+
+        if (match(item))
+        {
+            return id;
+        }
+
+        int nextId = treeView.viewController.GetParentId(id);
+
+        return FindFirstRootItemIdById(treeView, nextId, match);
     }
 
     public static void ReplaceItem<T>(BaseTreeView treeView, TreeViewItemData<T> item, int parentId = -1, int childIndex = -1, bool rebuildTree = true)

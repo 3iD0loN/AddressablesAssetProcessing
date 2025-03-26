@@ -51,7 +51,7 @@ public partial class CompareOperationField : VisualElement
             return;
         }
 
-        if (dataSource.leftHand.IsReadonly && dataSource.rightHand.IsReadonly)
+        if (dataSource.leftHand.IsReadOnly && dataSource.rightHand.IsReadOnly)
         {
             sameLabel.style.display = DisplayStyle.None;
             differentLabel.style.display = DisplayStyle.Flex;
@@ -65,7 +65,7 @@ public partial class CompareOperationField : VisualElement
         differentButtons.style.display = DisplayStyle.Flex;
 
         var copyLeftButton = this.Q<Button>("copy-left-button");
-        if (dataSource.leftHand.IsReadonly)
+        if (dataSource.leftHand.IsReadOnly)
         {
             copyLeftButton.style.display = DisplayStyle.None;
         }
@@ -76,7 +76,7 @@ public partial class CompareOperationField : VisualElement
         }
 
         var copyRightButton = this.Q<Button>("copy-right-button");
-        if (dataSource.rightHand.IsReadonly)
+        if (dataSource.rightHand.IsReadOnly)
         {
             copyRightButton.style.display = DisplayStyle.None;
         }

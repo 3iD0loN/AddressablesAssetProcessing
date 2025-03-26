@@ -164,8 +164,14 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
             }
 
             TreeViewElement<ComparisonEntry> entry = GetItemDataForIndex<TreeViewElement<ComparisonEntry>>(index);
-            object value = entry.Value.compareTargets[name].Value;
-            string textValue = value != null ? value.ToString() : "No Entry";
+            
+            CompareOperand compareOperand = entry.Value.compareTargets[name];
+
+            string textValue = compareOperand != null ?
+                compareOperand.Value != null ?
+                    compareOperand.Value.ToString() :
+                    "No Entry" :
+                string.Empty;
 
             textField.label = entry.Value.entryName;
             textField.value = textValue;
@@ -189,11 +195,11 @@ public partial class ComparisonEntryTreeView : MultiColumnTreeView
         float width = 0;
         if (!operation.result)
         {
-            if (!operation.leftHand.IsReadonly)
+            if (!operation.leftHand.IsReadOnly)
             {
                 width += 60;
             }
-            if (!operation.rightHand.IsReadonly)
+            if (!operation.rightHand.IsReadOnly)
             {
                 width += 60;
             }
