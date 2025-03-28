@@ -13,7 +13,7 @@ namespace USP.AddressablesAssetProcessing
     {
         #region Static Methods
         public static MetaAddressables.UserData SetAddressableAsset(AddressableAssetSettings settings, string assetFilePath, 
-            AddressableAssetGroupTemplate group, string address, HashSet<string> labels)
+            AddressableAssetGroupTemplate group, string address, HashSet<string> labels, bool generateAddressables)
         {
             if (MetaAddressables.Factory is MetaAddressables.CreationFactory factory)
             {
@@ -40,10 +40,13 @@ namespace USP.AddressablesAssetProcessing
             // Take the current address of the asset and simplify it.
             userData.Asset.Address = address;
 
-            // Generate Addressables groups from the Meta file.
-            // This is done before saving MetaAddressables to file in case we find groups that already match,
-            // which will correct the Group member to the better match.
-            MetaAddressables.Generate(ref userData, settings);
+            if (generateAddressables)
+            {
+                // Generate Addressables groups from the Meta file.
+                // This is done before saving MetaAddressables to file in case we find groups that already match,
+                // which will correct the Group member to the better match.
+                MetaAddressables.Generate(ref userData, settings);
+            }
 
             // Save to MetaAddressables changes.
             MetaAddressables.Write(assetFilePath, userData);
@@ -56,12 +59,24 @@ namespace USP.AddressablesAssetProcessing
         public MetaAddressablesAssetStore AssetStore { get; }
 
         IAssetStore IAssetApplicator.AssetStore => AssetStore;
+
+        /// <summary>
+        /// A value indicating whether the applying the asset should also generate an Addressable asset entry in addition to the metafile entry.
+        /// </summary>
+        public bool GenerateAddressables { get; }
+
+        /// <summary>
+        /// A value indicating whether the asset store can should tolerate collisions.
+        /// </summary>
+        public bool TolerateAssetOverwrite { get; }
         #endregion
 
         #region Methods
-        public MetaAddressablesAssetApplicator(MetaAddressablesAssetStore assetStore = null)
+        public MetaAddressablesAssetApplicator(MetaAddressablesAssetStore assetStore = null, bool generateAddressables = false, bool tolerateAssetOverwrite = false)
         {
             AssetStore = assetStore ?? new MetaAddressablesAssetStore();
+            GenerateAddressables = generateAddressables;
+            TolerateAssetOverwrite = tolerateAssetOverwrite;
         }
 
         public void ApplyAsset(AddressableAssetSettings settings,
@@ -70,9 +85,9 @@ namespace USP.AddressablesAssetProcessing
             string address,
             HashSet<string> labels)
         {
-            MetaAddressables.UserData userData = SetAddressableAsset(settings, assetFilePath, group, address, labels);
+            MetaAddressables.UserData userData = SetAddressableAsset(settings, assetFilePath, group, address, labels, GenerateAddressables);
 
-            AssetStore.AddAsset(userData, assetFilePath, true);
+            AssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
 
@@ -81,15 +96,18 @@ namespace USP.AddressablesAssetProcessing
             // Find the asset file path associated with the asset guid.
             var assetFilePath = AssetDatabase.GUIDToAssetPath(userData.Asset.Guid);
 
-            // Generate Addressables groups from the Meta file.
-            // This is done before saving MetaAddressables to file in case we find groups that already match,
-            // which will correct the Group member to the better match.
-            MetaAddressables.Generate(ref userData, settings);
+            if (GenerateAddressables)
+            {
+                // Generate Addressables groups from the Meta file.
+                // This is done before saving MetaAddressables to file in case we find groups that already match,
+                // which will correct the Group member to the better match.
+                MetaAddressables.Generate(ref userData, settings);
+            }
 
             // Save to MetaAddressables changes.
             MetaAddressables.Write(assetFilePath, userData);
 
-            AssetStore.AddAsset(userData, assetFilePath, true);
+            AssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion

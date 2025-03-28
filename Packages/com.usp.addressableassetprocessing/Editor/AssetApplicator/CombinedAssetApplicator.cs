@@ -28,7 +28,7 @@ namespace USP.AddressablesAssetProcessing
             SimulatedAssetApplicator = new SimulatedAssetApplicator();
 
 #if ENABLE_METAADDRESSABLES
-            MetaAddressablesAssetApplicator = new MetaAddressablesAssetApplicator();
+            MetaAddressablesAssetApplicator = new MetaAddressablesAssetApplicator(null, false, false);
 #endif
 
             AddressablesAssetApplicator = new AddressablesAssetApplicator(addressablesAssetStore);
