@@ -61,7 +61,8 @@ namespace USP.AddressablesAssetProcessing
 
                 if (!overwrite)
                 {
-                    throw new System.Exception("Collision!");
+                    string message = $"Collision. Attempting to add asset: {assetFilePath} to asset store: {this}, but an entry already exists. Pass in overwrite parameter if this was intenden";
+                    throw new System.Exception(message);
                 }
             }
 
