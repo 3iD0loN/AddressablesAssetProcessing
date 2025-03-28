@@ -171,7 +171,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         var settings = AddressableAssetSettingsDefaultObject.Settings;
         AddressablesAssetStore addressablesAssetStore = GetAddressablesAssetStore(settings);
-        var assetApplicator = new MetaAddressablesAssetApplicator(null, addressablesAssetStore, true);
+        var assetApplicator = new MetaAddressablesAssetApplicator(null, addressablesAssetStore, true, true);
 
         AddressablesDeduplicator.ProcessAssets(groupExtractor, addressExtractor, assetApplicator);
     }
