@@ -49,6 +49,10 @@ public abstract class AddressablesProcessingWindow : EditorWindow
     #endregion
     #endregion
 
+    #region Fields
+    private AddressablesAssetStore addressablesAssetStore;
+    #endregion
+
     #region Methods
     private void CreateGUI()
     {
@@ -62,7 +66,7 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         CreateGlobalStateGUI(globalState);
 
         var settings = AddressableAssetSettingsDefaultObject.Settings;
-        AddressablesAssetStore addressablesAssetStore = BuildAddressablesAssetStore(settings);
+        AddressablesAssetStore addressablesAssetStore = GetAddressablesAssetStore(settings);
         List<Folder> folders = BuildFolderStates(addressablesAssetStore);
         
         MultiColumnTreeView mainTreeView = rootVisualElement.Q<MultiColumnTreeView>("main-tree-view");
@@ -133,19 +137,24 @@ public abstract class AddressablesProcessingWindow : EditorWindow
                     }
                 }
 
-                deduplicateButton.SetEnabled(collectedCount != 0 && processedCount != 0);
+                //deduplicateButton.SetEnabled(collectedCount != 0 && processedCount != 0);
             };
         };
     }
 
-    private AddressablesAssetStore BuildAddressablesAssetStore(AddressableAssetSettings settings)
+    private AddressablesAssetStore GetAddressablesAssetStore(AddressableAssetSettings settings)
     {
         if (settings == null)
         {
             return null;
         }
 
-        return new AddressablesAssetStore(settings);
+        if (addressablesAssetStore == null)
+        {
+            addressablesAssetStore = new AddressablesAssetStore(settings);
+        }
+
+        return addressablesAssetStore;
     }
 
     protected abstract void CreateGlobalStateGUI(VisualElement globalState);
@@ -160,7 +169,9 @@ public abstract class AddressablesProcessingWindow : EditorWindow
 
         var addressExtractor = new SimplifiedAddressExtractor();
 
-        var assetApplicator = new MetaAddressablesAssetApplicator();
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        AddressablesAssetStore addressablesAssetStore = GetAddressablesAssetStore(settings);
+        var assetApplicator = new MetaAddressablesAssetApplicator(null, addressablesAssetStore, true);
 
         AddressablesDeduplicator.ProcessAssets(groupExtractor, addressExtractor, assetApplicator);
     }
