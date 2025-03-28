@@ -4,6 +4,7 @@ using UnityEditor.AddressableAssets.Settings;
 
 namespace USP.AddressablesAssetProcessing
 {
+    using DocumentFormat.OpenXml.Presentation;
     using UnityEditor;
 
 #if ENABLE_METAADDRESSABLES
@@ -27,20 +28,23 @@ namespace USP.AddressablesAssetProcessing
         /// A value indicating whether the asset store can should tolerate collisions.
         /// </summary>
         public bool TolerateAssetOverwrite { get; }
+
+        public bool ForceGroupOverwrite { get; }
         #endregion
 
         #region Methods
         public MetaAddressablesAssetApplicator(MetaAddressablesAssetStore assetStore = null,
-            AddressablesAssetStore addressablesAssetStore = null, bool tolerateAssetOverwrite = false)
+            AddressablesAssetStore addressablesAssetStore = null, bool tolerateAssetOverwrite = false, bool forceGroupOverwrite = false)
         {
             AssetStore = assetStore ?? new MetaAddressablesAssetStore();
             AddressablesAssetStore = addressablesAssetStore;
             TolerateAssetOverwrite = tolerateAssetOverwrite;
+            ForceGroupOverwrite = forceGroupOverwrite;
         }
 
         public void ApplyAsset(AddressableAssetSettings settings,
             string assetFilePath,
-            AddressableAssetGroupTemplate group,
+            AddressableAssetGroupTemplate groupTemplate,
             string address,
             HashSet<string> labels)
         {
@@ -48,7 +52,7 @@ namespace USP.AddressablesAssetProcessing
             {
                 // MetaAddressables data creation will default to using this group if there is no metadata associated. 
                 factory.Settings = settings;
-                factory.ActiveGroupTemplate = group;
+                factory.ActiveGroupTemplate = groupTemplate;
             }
 
             // Get the user data associated with the asset file path.
@@ -60,6 +64,16 @@ namespace USP.AddressablesAssetProcessing
             {
                 // Return invalid data. Do nothing else.
                 return;
+            }
+
+            if (ForceGroupOverwrite)
+            {
+                string groupName = GetGroupName(userData);
+                if (!StringComparer.Ordinal.Equals(groupName, groupTemplate.Name))
+                {
+                    userData.Group = new MetaAddressables.GroupData(groupTemplate);
+                    UnityEngine.Debug.LogWarning($"The group template is {groupTemplate.Name} but the user data read is {groupName} for asset {assetFilePath}");
+                }
             }
 
             // Replace the current set of labels and add them to the set. 
@@ -108,6 +122,23 @@ namespace USP.AddressablesAssetProcessing
 
             AssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
+        }
+
+        private static string GetGroupName(MetaAddressables.UserData userData)
+        {
+            string name = userData.Group.Name;
+            if (string.IsNullOrEmpty(name))
+            {
+                bool found = AddressablesLookup.GroupsAndHashesByGuids.TryGetValue(userData.Group.Guid, out AddressableAssetGroup g);
+                if (found)
+                {
+                    return g.Name;
+                }
+
+                UnityEngine.Debug.LogError("things are bad like you wouldn't believe, man...");
+            }
+
+            return null;
         }
         #endregion
     }

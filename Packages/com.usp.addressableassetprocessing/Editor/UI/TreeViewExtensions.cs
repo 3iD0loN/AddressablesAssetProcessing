@@ -119,7 +119,7 @@ public static class TreeViewExtensions
         bool removed = treeView.TryRemoveItem(oldId, true);
         if (removed)
         {
-            AddUniqueItem(treeView, parentId, item, childIndex, rebuildTree);
+            AddUniqueItem(treeView, parentId, item, childIndex - 1, rebuildTree);
         }
     }
 

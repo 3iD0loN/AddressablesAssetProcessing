@@ -11,5 +11,5 @@
         </ui:VisualElement>
         <AssetField name="selected-processing-state" />
     </ui:TwoPaneSplitView>
-    <ui:Button name="deduplicate-all-button" text="Deduplicate All Implicit Assets" enabled="false" />
+    <ui:Button name="deduplicate-all-button" text="Deduplicate All Implicit Assets" enabled="true" />
 </ui:UXML>
