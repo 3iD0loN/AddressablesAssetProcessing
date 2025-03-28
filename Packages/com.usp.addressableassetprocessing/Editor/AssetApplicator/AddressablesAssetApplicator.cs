@@ -9,7 +9,7 @@ namespace USP.AddressablesAssetProcessing
     public class AddressablesAssetApplicator : IAssetApplicator<AddressablesAssetStore>
     {
         #region Static Methods
-        public static void SetGlobalLabels(AddressableAssetSettings settings, HashSet<string> labels)
+        public static void SetGlobalLabels(AddressableAssetSettings settings, ISet<string> labels)
         {
             // If there are valid settings, then:
             if (settings == null)
@@ -59,7 +59,7 @@ namespace USP.AddressablesAssetProcessing
             
             SetGlobalLabels(settings, labels);
 
-            AssetStore.AddAsset(entry);
+            AssetStore.AddAsset(entry, true);
             AssetStore.AddGlobalLabels(labels);
         }
 
@@ -75,7 +75,7 @@ namespace USP.AddressablesAssetProcessing
 
             SetGlobalLabels(settings, userData.Asset.Labels);
 
-            AssetStore.AddAsset(entry);
+            AssetStore.AddAsset(entry, true);
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion

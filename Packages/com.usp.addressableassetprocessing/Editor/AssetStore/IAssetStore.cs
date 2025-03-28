@@ -24,7 +24,7 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Methods
-        void AddGlobalLabels(HashSet<string> labels);
+        void AddGlobalLabels(ISet<string> labels);
         #endregion
     }
 }

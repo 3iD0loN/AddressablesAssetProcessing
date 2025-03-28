@@ -54,7 +54,7 @@ namespace USP.AddressablesAssetProcessing
             AddAsset(settings, assetFilePath, userData.Asset.Labels);
         }
 
-        private void AddAsset(AddressableAssetSettings settings, string assetFilePath, HashSet<string> labels)
+        private void AddAsset(AddressableAssetSettings settings, string assetFilePath, ISet<string> labels)
         {
 #if ENABLE_METAADDRESSABLES
             var metaAddressablesAssetStore = MetaAddressablesAssetApplicator.AssetStore;

@@ -72,7 +72,7 @@ namespace USP.AddressablesAssetProcessing
         {
             MetaAddressables.UserData userData = SetAddressableAsset(settings, assetFilePath, group, address, labels);
 
-            AssetStore.AddAsset(userData, assetFilePath, false);
+            AssetStore.AddAsset(userData, assetFilePath, true);
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
 
