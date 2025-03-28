@@ -62,8 +62,7 @@ namespace USP.AddressablesAssetProcessing
                 PopulateGroups(asset.DependentAssets, groups);
 
                 // Apply the asset file path to the group selector to set the appropriate group template.
-                AddressableAssetGroupTemplate group = null;
-                _groupExtractor.Extract(groups, ref group);
+                _groupExtractor.Extract(groups, ref result);
             }
             #endregion
         }
