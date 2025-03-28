@@ -18,6 +18,7 @@ namespace USP.AddressablesAssetProcessing
             if (MetaAddressables.Factory is MetaAddressables.CreationFactory factory)
             {
                 // MetaAddressables data creation will default to using this group if there is no metadata associated. 
+                factory.Settings = settings;
                 factory.ActiveGroupTemplate = group;
             }
 
@@ -32,7 +33,8 @@ namespace USP.AddressablesAssetProcessing
                 return null;
             }
 
-            // Union the labels that were extracted with the current ones associated with the asset.
+            // Replace the current set of labels and add them to the set. 
+            userData.Asset.Labels.Clear();
             userData.Asset.Labels.UnionWith(labels);
 
             // Take the current address of the asset and simplify it.
@@ -76,6 +78,7 @@ namespace USP.AddressablesAssetProcessing
 
         public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
         {
+            // Find the asset file path associated with the asset guid.
             var assetFilePath = AssetDatabase.GUIDToAssetPath(userData.Asset.Guid);
 
             // Generate Addressables groups from the Meta file.
