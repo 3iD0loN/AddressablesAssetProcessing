@@ -72,7 +72,7 @@ namespace USP.AddressablesAssetProcessing
 
             userData = new MetaAddressables.UserData(entry);
 
-            dataByAssetPath.Add(entry.AssetPath, userData);
+            dataByAssetPath[entry.AssetPath] = userData;
         }
 
         public void AddGlobalLabels()
