@@ -254,9 +254,9 @@ namespace USP.AddressablesAssetProcessing
         {
             var properties = new Dictionary<string, CompareOperand>(3);
             
-            properties[ProcessingDataKey] = CreateTarget(combinedAssetApplicator.SimulatedAssetApplicator, settings, assetFilePath);
-            properties[MetafileDataKey] = CreateTarget(combinedAssetApplicator.MetaAddressablesAssetApplicator, settings, assetFilePath);
-            properties[AddressablesDataKey] = CreateTarget(combinedAssetApplicator.AddressablesAssetApplicator, settings, assetFilePath);
+            properties[ProcessingDataKey] = CreateTarget(combinedAssetApplicator.AssetStore, combinedAssetApplicator.SimulatedAssetApplicator, settings, assetFilePath);
+            properties[MetafileDataKey] = CreateTarget(combinedAssetApplicator.MetaAddressablesAssetStore, combinedAssetApplicator.FileProcessingToMetaFileApplicator, settings, assetFilePath);
+            properties[AddressablesDataKey] = CreateTarget(combinedAssetApplicator.AddressablesAssetStore, combinedAssetApplicator.MetaFileToAddressablesApplicator, settings, assetFilePath);
 
             var result = new ComparisonEntry();
             result.comparer = userDataComparer;
@@ -269,9 +269,9 @@ namespace USP.AddressablesAssetProcessing
             return result;
         }
 
-        private static CompareOperand CreateTarget(IAssetApplicator assetApplicator, AddressableAssetSettings settings, string assetFilePath)
+        private static CompareOperand CreateTarget(IAssetStore assetStore, IAssetApplicator assetApplicator, AddressableAssetSettings settings, string assetFilePath)
         {
-            if (assetApplicator.AssetStore.DataByAssetPath is not IData dataByAssetPath)
+            if (assetStore.DataByAssetPath is not IData dataByAssetPath)
             {
                 return new CompareOperand(null, null, null);
             }
@@ -280,7 +280,7 @@ namespace USP.AddressablesAssetProcessing
 
             Func<object, object> getter = target => Get(target as IReadOnlyData, assetFilePath);
 
-            Action<object, object> setter = assetApplicator.AssetStore.IsReadOnly ? null :
+            Action<object, object> setter = assetStore.IsReadOnly ? null :
                 (target, value) => Set(target as IData, assetFilePath, value as MetaAddressables.UserData);
 
             return new CompareOperand(x, dataByAssetPath, getter, setter);

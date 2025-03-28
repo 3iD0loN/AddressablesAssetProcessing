@@ -5,15 +5,44 @@ using UnityEditor.AddressableAssets.Settings;
 namespace USP.AddressablesAssetProcessing
 {
     using UnityEditor;
-    using UnityEditor.AddressableAssets;
+
 #if ENABLE_METAADDRESSABLES
     using USP.MetaAddressables;
 
     public class MetaAddressablesAssetApplicator : IAssetApplicator<MetaAddressablesAssetStore>
     {
-        #region Static Methods
-        public static MetaAddressables.UserData SetAddressableAsset(AddressableAssetSettings settings, string assetFilePath, 
-            AddressableAssetGroupTemplate group, string address, HashSet<string> labels, bool generateAddressables)
+        #region Properties
+        public MetaAddressablesAssetStore AssetStore { get; }
+
+        public AddressablesAssetStore AddressablesAssetStore { get; }
+
+        IAssetStore IAssetApplicator.AssetStore => AssetStore;
+
+        /// <summary>
+        /// A value indicating whether the applying the asset should also generate an Addressable asset entry in addition to the metafile entry.
+        /// </summary>
+        public bool GenerateAddressables => AddressablesAssetStore != null;
+
+        /// <summary>
+        /// A value indicating whether the asset store can should tolerate collisions.
+        /// </summary>
+        public bool TolerateAssetOverwrite { get; }
+        #endregion
+
+        #region Methods
+        public MetaAddressablesAssetApplicator(MetaAddressablesAssetStore assetStore = null,
+            AddressablesAssetStore addressablesAssetStore = null, bool tolerateAssetOverwrite = false)
+        {
+            AssetStore = assetStore ?? new MetaAddressablesAssetStore();
+            AddressablesAssetStore = addressablesAssetStore;
+            TolerateAssetOverwrite = tolerateAssetOverwrite;
+        }
+
+        public void ApplyAsset(AddressableAssetSettings settings,
+            string assetFilePath,
+            AddressableAssetGroupTemplate group,
+            string address,
+            HashSet<string> labels)
         {
             if (MetaAddressables.Factory is MetaAddressables.CreationFactory factory)
             {
@@ -30,7 +59,7 @@ namespace USP.AddressablesAssetProcessing
             if (userData == null)
             {
                 // Return invalid data. Do nothing else.
-                return null;
+                return;
             }
 
             // Replace the current set of labels and add them to the set. 
@@ -40,52 +69,19 @@ namespace USP.AddressablesAssetProcessing
             // Take the current address of the asset and simplify it.
             userData.Asset.Address = address;
 
-            if (generateAddressables)
+            if (GenerateAddressables)
             {
                 // Generate Addressables groups from the Meta file.
                 // This is done before saving MetaAddressables to file in case we find groups that already match,
                 // which will correct the Group member to the better match.
                 MetaAddressables.Generate(ref userData, settings);
+
+                AddressablesAssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
+                AddressablesAssetStore.AddGlobalLabels(userData.Asset.Labels);
             }
 
             // Save to MetaAddressables changes.
             MetaAddressables.Write(assetFilePath, userData);
-
-            return userData;
-        }
-        #endregion
-
-        #region Properties
-        public MetaAddressablesAssetStore AssetStore { get; }
-
-        IAssetStore IAssetApplicator.AssetStore => AssetStore;
-
-        /// <summary>
-        /// A value indicating whether the applying the asset should also generate an Addressable asset entry in addition to the metafile entry.
-        /// </summary>
-        public bool GenerateAddressables { get; }
-
-        /// <summary>
-        /// A value indicating whether the asset store can should tolerate collisions.
-        /// </summary>
-        public bool TolerateAssetOverwrite { get; }
-        #endregion
-
-        #region Methods
-        public MetaAddressablesAssetApplicator(MetaAddressablesAssetStore assetStore = null, bool generateAddressables = false, bool tolerateAssetOverwrite = false)
-        {
-            AssetStore = assetStore ?? new MetaAddressablesAssetStore();
-            GenerateAddressables = generateAddressables;
-            TolerateAssetOverwrite = tolerateAssetOverwrite;
-        }
-
-        public void ApplyAsset(AddressableAssetSettings settings,
-            string assetFilePath,
-            AddressableAssetGroupTemplate group,
-            string address,
-            HashSet<string> labels)
-        {
-            MetaAddressables.UserData userData = SetAddressableAsset(settings, assetFilePath, group, address, labels, GenerateAddressables);
 
             AssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
@@ -102,6 +98,9 @@ namespace USP.AddressablesAssetProcessing
                 // This is done before saving MetaAddressables to file in case we find groups that already match,
                 // which will correct the Group member to the better match.
                 MetaAddressables.Generate(ref userData, settings);
+
+                AddressablesAssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
+                AddressablesAssetStore.AddGlobalLabels(userData.Asset.Labels);
             }
 
             // Save to MetaAddressables changes.

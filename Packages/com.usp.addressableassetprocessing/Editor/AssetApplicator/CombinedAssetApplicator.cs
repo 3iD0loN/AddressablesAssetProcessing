@@ -14,12 +14,19 @@ namespace USP.AddressablesAssetProcessing
         #region Properties
         public SimulatedAssetApplicator SimulatedAssetApplicator { get; }
 
-        public AddressablesAssetApplicator AddressablesAssetApplicator { get; }
+#if ENABLE_METAADDRESSABLES
+        public MetaAddressablesAssetApplicator FileProcessingToMetaFileApplicator { get; }
+
+        public MetaAddressablesAssetApplicator MetaFileToAddressablesApplicator { get; }
+#endif
+
+        public IAssetStore AssetStore => SimulatedAssetApplicator.AssetStore;
 
 #if ENABLE_METAADDRESSABLES
-        public MetaAddressablesAssetApplicator MetaAddressablesAssetApplicator { get; }
+        public MetaAddressablesAssetStore MetaAddressablesAssetStore { get; }
 #endif
-        public IAssetStore AssetStore => SimulatedAssetApplicator.AssetStore;
+
+        public AddressablesAssetStore AddressablesAssetStore { get; }
         #endregion
 
         #region Methods
@@ -28,10 +35,13 @@ namespace USP.AddressablesAssetProcessing
             SimulatedAssetApplicator = new SimulatedAssetApplicator();
 
 #if ENABLE_METAADDRESSABLES
-            MetaAddressablesAssetApplicator = new MetaAddressablesAssetApplicator(null, false, false);
+            this.MetaAddressablesAssetStore = new MetaAddressablesAssetStore();
+
+            FileProcessingToMetaFileApplicator = new MetaAddressablesAssetApplicator(MetaAddressablesAssetStore, null, false);
+            MetaFileToAddressablesApplicator = new MetaAddressablesAssetApplicator(MetaAddressablesAssetStore, addressablesAssetStore, true);
 #endif
 
-            AddressablesAssetApplicator = new AddressablesAssetApplicator(addressablesAssetStore);
+            this.AddressablesAssetStore = addressablesAssetStore;
         }
 
         public void ApplyAsset(AddressableAssetSettings settings,
@@ -51,20 +61,19 @@ namespace USP.AddressablesAssetProcessing
 
             SimulatedAssetApplicator.ApplyAsset(settings, userData, assetFilePath);
 
+            // Add entries from the respective representations.
             AddAsset(settings, assetFilePath, userData.Asset.Labels);
         }
 
         private void AddAsset(AddressableAssetSettings settings, string assetFilePath, ISet<string> labels)
         {
 #if ENABLE_METAADDRESSABLES
-            var metaAddressablesAssetStore = MetaAddressablesAssetApplicator.AssetStore;
-            metaAddressablesAssetStore.AddAsset(assetFilePath);
-            metaAddressablesAssetStore.AddGlobalLabels(labels);
+            MetaAddressablesAssetStore.AddAsset(assetFilePath);
+            MetaAddressablesAssetStore.AddGlobalLabels(labels);
 #endif
 
-            var addressablesAssetStore = AddressablesAssetApplicator.AssetStore;
-            addressablesAssetStore.AddAsset(assetFilePath);
-            addressablesAssetStore.AddGlobalLabels();
+            AddressablesAssetStore.AddAsset(assetFilePath);
+            AddressablesAssetStore.AddGlobalLabels();
         }
         #endregion
     }
