@@ -29,7 +29,7 @@ namespace USP.AddressablesAssetProcessing
         /// </summary>
         public bool TolerateAssetOverwrite { get; }
 
-        public bool ForceGroupOverwrite { get; }
+        public bool UseGroupOverwrite { get; }
         #endregion
 
         #region Methods
@@ -39,7 +39,7 @@ namespace USP.AddressablesAssetProcessing
             AssetStore = assetStore ?? new MetaAddressablesAssetStore();
             AddressablesAssetStore = addressablesAssetStore;
             TolerateAssetOverwrite = tolerateAssetOverwrite;
-            ForceGroupOverwrite = forceGroupOverwrite;
+            UseGroupOverwrite = forceGroupOverwrite;
         }
 
         public void ApplyAsset(AddressableAssetSettings settings,
@@ -66,7 +66,7 @@ namespace USP.AddressablesAssetProcessing
                 return;
             }
 
-            if (ForceGroupOverwrite)
+            if (UseGroupOverwrite)
             {
                 string groupName = GetGroupName(userData);
                 if (!StringComparer.Ordinal.Equals(groupName, groupTemplate.Name))
