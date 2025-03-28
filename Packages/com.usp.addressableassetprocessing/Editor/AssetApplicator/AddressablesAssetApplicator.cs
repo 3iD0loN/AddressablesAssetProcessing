@@ -49,7 +49,7 @@ namespace USP.AddressablesAssetProcessing
             string address,
             HashSet<string> labels)
         {
-            if (AssetStore.Settings == settings)
+            if (AssetStore.Settings != settings)
             {
                 return;
             }
@@ -65,7 +65,7 @@ namespace USP.AddressablesAssetProcessing
 
         public void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
         {
-            if (AssetStore.Settings == settings)
+            if (AssetStore.Settings != settings)
             {
                 return;
             }
