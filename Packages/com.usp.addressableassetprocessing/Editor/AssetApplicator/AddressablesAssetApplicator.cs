@@ -56,9 +56,10 @@ namespace USP.AddressablesAssetProcessing
 
             AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, groupTemplate);
             AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, assetFilePath, group, address, labels);
-            AssetStore.AddAsset(entry);
-
+            
             SetGlobalLabels(settings, labels);
+
+            AssetStore.AddAsset(entry);
             AssetStore.AddGlobalLabels(labels);
         }
 
@@ -71,9 +72,10 @@ namespace USP.AddressablesAssetProcessing
 
             AddressableAssetGroup group = MetaAddressables.GroupData.Create(settings, userData.Group);
             AddressableAssetEntry entry = MetaAddressables.AssetData.CreateOrMove(settings, group, userData.Asset);
-            AssetStore.AddAsset(entry);
 
             SetGlobalLabels(settings, userData.Asset.Labels);
+
+            AssetStore.AddAsset(entry);
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion

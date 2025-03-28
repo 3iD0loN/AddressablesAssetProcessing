@@ -27,21 +27,18 @@ namespace USP.AddressablesAssetProcessing
             HashSet<string> labels)
         {
             AssetStore.AddAsset(assetFilePath, group, address, labels);
-
             AssetStore.AddGlobalLabels(labels);
         }
 
         public virtual void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData, string assetFilePath)
         {
             AssetStore.AddAsset(userData, assetFilePath, true);
-
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
 
         public virtual void ApplyAsset(AddressableAssetSettings settings, MetaAddressables.UserData userData)
         {
             AssetStore.AddAsset(userData, true);
-
             AssetStore.AddGlobalLabels(userData.Asset.Labels);
         }
         #endregion
