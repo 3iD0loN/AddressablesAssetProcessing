@@ -61,7 +61,7 @@ namespace USP.AddressablesAssetProcessing
 
                 if (!overwrite)
                 {
-                    string message = $"Collision. Attempting to add asset: {assetFilePath} to asset store: {this}, but an entry already exists. Pass in overwrite parameter if this was intenden";
+                    string message = $"Collision. Attempting to add asset: {assetFilePath} to asset store: {this}, but an entry already exists. Pass in overwrite parameter if this was intended";
                     throw new System.Exception(message);
                 }
             }
@@ -69,7 +69,7 @@ namespace USP.AddressablesAssetProcessing
             dataByAssetPath[assetFilePath] = userData;
         }
 
-        public virtual void AddGlobalLabels(HashSet<string> labels)
+        public virtual void AddGlobalLabels(ISet<string> labels)
         {
             AddGlobalLabels(labels as IEnumerable<string>);
         }
