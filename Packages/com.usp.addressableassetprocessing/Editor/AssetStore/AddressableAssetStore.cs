@@ -25,8 +25,19 @@ namespace USP.AddressablesAssetProcessing
 
             foreach (AddressableAssetGroup group in settings.groups)
             {
+                if (group == null)
+                {
+                    UnityEngine.Debug.LogWarning($"[Missing Reference] Group found in Addressables settings. Right Click in Addressables Groups and choose 'Clear Missing References'.");
+                    continue;
+                }
+
                 foreach (AddressableAssetEntry entry in group.entries)
                 {
+                    if (string.IsNullOrEmpty(entry.AssetPath))
+                    {
+                        continue;
+                    }
+
                     AddAsset(entry);
                 }
             }
