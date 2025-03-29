@@ -14,16 +14,19 @@ namespace USP.AddressablesAssetProcessing
     using IReadOnlyData = IReadOnlyDictionary<string, USP.MetaAddressables.MetaAddressables.UserData>;
 #endif
 
-    public class X
+    public class AssetReapplicator
     {
+        public readonly IAssetStore AssetStore;
+
         public readonly IAssetApplicator AssetApplicator;
 
         public readonly AddressableAssetSettings Settings;
 
         public readonly string AssetFilePath;
 
-        public X(IAssetApplicator assetApplicator, AddressableAssetSettings settings, string assetFilePath)
+        public AssetReapplicator(IAssetStore assetStore, IAssetApplicator assetApplicator, AddressableAssetSettings settings, string assetFilePath)
         {
+            this.AssetStore = assetStore;
             this.AssetApplicator = assetApplicator;
             this.Settings = settings;
             this.AssetFilePath = assetFilePath;
@@ -31,7 +34,7 @@ namespace USP.AddressablesAssetProcessing
 
         public void Reapply()
         {
-            bool found = AssetApplicator.AssetStore.DataByAssetPath.TryGetValue(AssetFilePath, out MetaAddressables.UserData userData);
+            bool found = AssetStore.DataByAssetPath.TryGetValue(AssetFilePath, out MetaAddressables.UserData userData);
 
             if (!found)
             {
@@ -51,7 +54,7 @@ namespace USP.AddressablesAssetProcessing
 
         public Action<object, object> setter;
 
-        public X x;
+        public AssetReapplicator x;
         #endregion
 
         #region Properties
@@ -83,7 +86,7 @@ namespace USP.AddressablesAssetProcessing
         #endregion
 
         #region Methods
-        public CompareOperand(X x, object parentValue, Func<object, object> getter, Action<object, object> setter = null)
+        public CompareOperand(AssetReapplicator x, object parentValue, Func<object, object> getter, Action<object, object> setter = null)
         {
             this.x = x;
             this.parentValue = parentValue;
@@ -276,14 +279,14 @@ namespace USP.AddressablesAssetProcessing
                 return new CompareOperand(null, null, null);
             }
 
-            var x = new X(assetApplicator, settings, assetFilePath);
+            var assetReapplicator = new AssetReapplicator(assetStore, assetApplicator, settings, assetFilePath);
 
             Func<object, object> getter = target => Get(target as IReadOnlyData, assetFilePath);
 
             Action<object, object> setter = assetStore.IsReadOnly ? null :
                 (target, value) => Set(target as IData, assetFilePath, value as MetaAddressables.UserData);
 
-            return new CompareOperand(x, dataByAssetPath, getter, setter);
+            return new CompareOperand(assetReapplicator, dataByAssetPath, getter, setter);
         }
 
         private static MetaAddressables.UserData Get(IReadOnlyData dataByAssetPath, string assetFilePath)
