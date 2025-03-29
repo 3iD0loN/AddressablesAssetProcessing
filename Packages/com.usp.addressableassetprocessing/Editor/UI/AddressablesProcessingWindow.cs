@@ -8,7 +8,6 @@ using UnityEditor.AddressableAssets.Settings;
 
 using USP.AddressablesAssetProcessing;
 using USP.MetaAddressables;
-using static USP.MetaAddressables.MetaAddressables;
 
 public abstract class AddressablesProcessingWindow : EditorWindow
 {
@@ -63,13 +62,41 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         windowUxml.CloneTree(rootVisualElement);
 
         VisualElement globalState = rootVisualElement.Q<VisualElement>("global-settings");
-        CreateGlobalStateGUI(globalState);
+
+        BuildGlobalStateUI(globalState);
+    }
+
+    protected abstract void BuildGlobalStateUI(VisualElement globalState);
+
+    private AddressablesAssetStore GetAddressablesAssetStore(AddressableAssetSettings settings)
+    {
+        if (settings == null)
+        {
+            return null;
+        }
+
+        if (addressablesAssetStore == null)
+        {
+            addressablesAssetStore = new AddressablesAssetStore(settings);
+        }
+
+        return addressablesAssetStore;
+    }
+
+    protected void BuildBuildFolderRuleUI(bool show)
+    {
+        MultiColumnTreeView mainTreeView = rootVisualElement.Q<MultiColumnTreeView>("main-tree-view");
+
+        if (!show)
+        {
+            mainTreeView.Clear();
+            return;
+        }
 
         var settings = AddressableAssetSettingsDefaultObject.Settings;
         AddressablesAssetStore addressablesAssetStore = GetAddressablesAssetStore(settings);
-        List<Folder> folders = BuildFolderStates(addressablesAssetStore);
+        List<Folder> folders = BuildFolderRules(addressablesAssetStore);
         
-        MultiColumnTreeView mainTreeView = rootVisualElement.Q<MultiColumnTreeView>("main-tree-view");
         List<TreeViewItemData<TreeViewElement<Asset>>> folderItems = AssetField.Pack(folders);
         mainTreeView.SetRootItems(folderItems);
         TreeViewExtensions.ExpandItems(mainTreeView, folderItems, true);
@@ -142,24 +169,8 @@ public abstract class AddressablesProcessingWindow : EditorWindow
         };
     }
 
-    private AddressablesAssetStore GetAddressablesAssetStore(AddressableAssetSettings settings)
-    {
-        if (settings == null)
-        {
-            return null;
-        }
-
-        if (addressablesAssetStore == null)
-        {
-            addressablesAssetStore = new AddressablesAssetStore(settings);
-        }
-
-        return addressablesAssetStore;
-    }
-
-    protected abstract void CreateGlobalStateGUI(VisualElement globalState);
     #region BuildStates
-    protected abstract List<Folder> BuildFolderStates(AddressablesAssetStore addressablesAssetStore);
+    protected abstract List<Folder> BuildFolderRules(AddressablesAssetStore addressablesAssetStore);
     #endregion
 
     #region Deduplication
