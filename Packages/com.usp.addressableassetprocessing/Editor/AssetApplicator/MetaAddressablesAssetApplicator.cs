@@ -90,6 +90,8 @@ namespace USP.AddressablesAssetProcessing
                 // which will correct the Group member to the better match.
                 MetaAddressables.Generate(ref userData, settings);
 
+                AddressablesAssetApplicator.SetGlobalLabels(settings, userData.Asset.Labels);
+
                 AddressablesAssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
                 AddressablesAssetStore.AddGlobalLabels(userData.Asset.Labels);
             }
@@ -112,6 +114,8 @@ namespace USP.AddressablesAssetProcessing
                 // This is done before saving MetaAddressables to file in case we find groups that already match,
                 // which will correct the Group member to the better match.
                 MetaAddressables.Generate(ref userData, settings);
+
+                AddressablesAssetApplicator.SetGlobalLabels(settings, userData.Asset.Labels);
 
                 AddressablesAssetStore.AddAsset(userData, assetFilePath, TolerateAssetOverwrite);
                 AddressablesAssetStore.AddGlobalLabels(userData.Asset.Labels);
