@@ -37,7 +37,7 @@ namespace USP.AddressablesAssetProcessing
 #if ENABLE_METAADDRESSABLES
             this.MetaAddressablesAssetStore = new MetaAddressablesAssetStore();
 
-            FileProcessingToMetaFileApplicator = new MetaAddressablesAssetApplicator(MetaAddressablesAssetStore, null, false);
+            FileProcessingToMetaFileApplicator = new MetaAddressablesAssetApplicator(MetaAddressablesAssetStore, null, false, true);
             MetaFileToAddressablesApplicator = new MetaAddressablesAssetApplicator(MetaAddressablesAssetStore, addressablesAssetStore, true);
 #endif
 
